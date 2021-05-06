@@ -31,7 +31,7 @@
         (check (core/eql (assoc seed :editor/range [[5 0] [5 0]])
                          [:editor/ns-range :editor/namespace])
                => {:editor/ns-range [[5 0] [5 13]]
-                   :editor/namespace "second.namespace"})))))
+                   :editor/namespace "second.ns"})))))
 
 (defn- ^:dev/after-load run []
   (run-tests))
