@@ -9,9 +9,10 @@
 (connect/defresolver separate-data [{:editor/keys [data]}]
   {::pco/output [:editor/contents :editor/filename :editor/range]}
 
-  {:editor/contents (:contents data)
-   :editor/filename (:filename data)
-   :editor/range (:range data)})
+  (let [file (:filename data)]
+    (cond-> {:editor/contents (:contents data)
+             :editor/range (:range data)}
+            file (assoc :editor/filename file))))
 
 (connect/defresolver top-blocks [{:editor/keys [contents]}]
   {:editor/top-blocks (editor-helpers/top-blocks contents)})
@@ -232,7 +233,6 @@
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
 (def resolvers [separate-data top-blocks
-
                 default-namespaces namespace-from-editor-data namespace-from-editor
                 var-from-editor])
 ;                    get-config

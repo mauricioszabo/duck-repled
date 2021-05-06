@@ -6,6 +6,13 @@
 (deftest editor-data
   (async-test "separates editor data into fragments"
     (check (core/eql {:editor/data {:contents "(+ 1 2)"
+                                    :filename nil
+                                    :range [[0 0] [0 0]]}}
+                     [:editor/contents :editor/filename :editor/range])
+           => {:editor/contents "(+ 1 2)"
+               :editor/range [[0 0] [0 0]]})
+
+    (check (core/eql {:editor/data {:contents "(+ 1 2)"
                                     :filename "foo.clj"
                                     :range [[0 0] [0 0]]}}
                      [:editor/contents :editor/filename :editor/range])
