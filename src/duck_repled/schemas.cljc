@@ -10,67 +10,40 @@
                            [:contents string?]
                            [:filename string?]
                            [:range range]])
+(def ^private range-and-content [:cat [:schema range] string?])
+(def ^private top-blocks [:vector range-and-content])
+
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/contents (m/schema string?)
    :editor/filename (m/schema string?)
    :editor/range (m/schema range)
-   :editor/ns-range range
+   :editor/ns-range (m/schema range)
    :editor/namespace (m/schema string?)
-   :editor/blocks (m/schema [:map-of range string?])
+   :editor/top-blocks (m/schema top-blocks)
+
+   :cljs/required? (m/schema boolean?)
+   :repl/namespace (m/schema simple-symbol?)
    :map (:map (m/base-schemas))})
 
 #_
-(e/humanize
- (m/explain [:map :editor/contents :editor/range]
-            {:editor/contents 1
-             :editor/range [ [1 1]]}
-            {:registry registry}))
-
-#_
-(validate! [[:map :editor/contents :editor/range]]
-           {:editor/contents ""
-             :editor/range [ [1 1] [1 1]]})
+(validate! [:editor/top-blocks]
+           {:editor/top-blocks
+            [[[[0 0] [0 1]] "()"] [[[0 3] [0 4]] "()"]]})
 
 (def explainer
   (memoize (fn [schemas]
              (let [mapped (apply vector :map schemas)]
                 (m/explainer mapped {:registry registry})))))
 
-(defn validate! [schemas value]
-  (let [explain (explainer schemas)
-        exp-error (explain value)
-        exp (e/humanize exp-error)]
-    (when exp
-      (throw (ex-info (str "Value does not match schema: " exp)
-                      {:human-error exp :details exp-error})))
-    value))
-
-#_
-(validate! [:editor/contents :editor/range :editor/filename]
-           {:editor/contents ""
-            :editor/range [[1 1] [1 1]]})
-#_
-(let [v (explainer [:editor/data])]
-  (v {}))
-#_
-(-> #{}
-    (conj (mu/merge :editor/data :editor/data {:registry registry}))
-    (conj (mu/merge :editor/data :editor/data {:registry registry}))
-    (conj (mu/merge :editor/data :editor/data {:registry registry})))
-; #{
-;   (mu/merge :editor/data :editor/data {:registry registry})
-;   (mu/merge :editor/data :editor/data {:registry registry})}
-;
-; (m/validator)
-; #_
-; (-> :editor/data
-;     (m/explain {:editor/data {:contents "foo" :filename "" :range [[1 1] [1 1]]}}
-;                {:registry registry})
-;     e/humanize)
-;
-; #_
-(-> (mu/merge :editor/data nil {:registry registry})
-    (m/explain {:editor/data {:contents 10 :filename "" :range [[1 1] [1 1]]}}))
-               ; {:registry registry})
-    ; e/humanize)
+(defn validate!
+  ([schemas value]
+   (validate! schemas value "Value does not match schema: "))
+  ([schemas value explanation]
+   (let [explain (explainer schemas)
+         exp-error (explain value)
+         exp (e/humanize exp-error)]
+     (when exp
+       (throw (ex-info (str explanation exp)
+                       {:human-error exp :details exp-error})))
+     value)))
