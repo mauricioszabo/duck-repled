@@ -3,8 +3,8 @@
             [cljs.reader :as edn]
             [cljs.tools.reader :as reader]
             ; [rewrite-clj.zip.move :as move]
-            ; [rewrite-clj.zip :as zip]
-            ; [rewrite-clj.zip.base :as zip-base]
+            [rewrite-clj.zip :as zip]
+            [rewrite-clj.zip.base :as zip-base]
             [rewrite-clj.node :as node]
             ; [rewrite-clj.reader :as clj-reader]
             [clojure.tools.reader.reader-types :as r]
@@ -62,3 +62,31 @@ that the cursor is in row and col (0-based)"
         (->> top-levels
              (drop-while before-selection?)
              find-ns-for))))
+
+(defn- current-var* [zipped row col]
+  (let [node (-> zipped
+                 (zip/find-last-by-pos {:row (inc row) :col (inc col)})
+                 zip/node)]
+    (when (and node (-> node node/whitespace-or-comment? not))
+      (let [{:keys [row col end-row end-col]} (meta node)]
+        [[[(dec row) (dec col)] [(dec end-row) (- end-col 2)]]
+         (node/string node)]))))
+
+(defn- zip-from-code [code]
+  (let [reader (r/indexing-push-back-reader code)
+        nodes (->> (repeatedly #(try
+                                  (parser/parse reader)
+                                  (catch :default _
+                                    (r/read-char reader)
+                                    (node/whitespace-node " "))))
+                   (take-while identity)
+                   (doall))
+        all-nodes (with-meta
+                    (node/forms-node nodes)
+                    (meta (first nodes)))]
+    (-> all-nodes zip-base/edn)))
+
+(defn current-var [code [row col]]
+  (let [zipped (zip-from-code code)]
+    (or (current-var* zipped row col)
+        (current-var* zipped row (dec col)))))

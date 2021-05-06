@@ -21,34 +21,37 @@
    :editor/filename (:filename data)
    :editor/range (:range data)})
 
-(pco/defresolver top-blocks [{:editor/keys [contents]}]
+(connect/defresolver top-blocks [{:editor/keys [contents]}]
   {:editor/top-blocks (editor-helpers/top-blocks contents)})
 
-(pco/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]}]
+(connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]}]
   {::pco/output [:editor/ns-range :editor/namespace]}
 
   (if-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-    {:editor/ns-range  range
-     :editor/namespace (str ns)}
-    {:editor/namespace nil}))
+    {:editor/ns-range range :editor/namespace (str ns)}
+    ::pco/unknown-value))
 
-; (pco/defresolver namespace-from-editor
-;   [{:keys [editor/namespace cljs/required?]}]
-;   {::pco/output [:repl/namespace]}
-;
-;   (cond
-;     namespace {:repl/namespace (symbol namespace)}
-;     required? {:repl/namespace 'cljs.user}
-;     :else {:repl/namespace 'user}))
-;
-; (pco/defresolver var-from-editor
-;   [{:editor/keys [contents range]}]
-;   {::pco/output [:editor/current-var :editor/current-var-range]}
-;
-;   (when-let [[range curr-var] (helpers/current-var contents (first range))]
-;     {:editor/current-var       curr-var
-;      :editor/current-var-range range}))
-;
+(pco/defresolver default-namespaces [{:keys [cljs/required?]}]
+  {:repl/namespace (if required? 'cljs.user 'user)})
+
+(pco/defresolver namespace-from-editor [{:keys [editor/namespace]}]
+  {::pco/output [:repl/namespace]
+   ::pco/priority 1}
+
+  {:repl/namespace (symbol namespace)})
+  ; (cond
+  ;   namespace
+  ;   required? {:repl/namespace 'cljs.user}
+  ;   :else {:repl/namespace 'user}))
+
+(connect/defresolver var-from-editor
+  [{:editor/keys [contents range]}]
+  {::pco/output [:editor/current-var :editor/current-var-range]}
+
+  (when-let [[range curr-var] (editor-helpers/current-var contents (first range))]
+    {:editor/current-var       curr-var
+     :editor/current-var-range range}))
+
 ; (pco/defresolver all-namespaces
 ;   [env {:keys [repl/clj]}]
 ;   {::pco/output [{:repl/namespaces [:repl/namespace]}]}
@@ -242,10 +245,10 @@
 ;                    (.-doc res) (assoc :doc (.-doc res))
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
-(def resolvers [separate-data
-                top-blocks
-                namespace-from-editor-data])
-;                    namespace-from-editor-data namespace-from-editor var-from-editor
+(def resolvers [separate-data top-blocks
+
+                default-namespaces namespace-from-editor-data namespace-from-editor
+                var-from-editor])
 ;                    get-config
 ;
 ;                    ; Namespaces resolvers

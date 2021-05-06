@@ -31,7 +31,24 @@
         (check (core/eql (assoc seed :editor/range [[5 0] [5 0]])
                          [:editor/ns-range :editor/namespace])
                => {:editor/ns-range [[5 0] [5 13]]
-                   :editor/namespace "second.ns"})))))
+                   :editor/namespace "second.ns"}))
+
+      (testing "gets REPL namespace if a ns exists"
+        (check (core/eql (assoc seed :editor/range [[2 0] [2 0]])
+                         [:repl/namespace])
+               => {:repl/namespace 'first.namespace}))
+
+      (testing "fallback to default if there's no NS in editor"
+        (check (core/eql {:editor/contents "" :editor/range [[2 0] [2 0]]
+                          :cljs/required? false}
+                         [:repl/namespace])
+               => {:repl/namespace 'user})
+
+        (check (core/eql {:editor/contents "" :editor/range [[2 0] [2 0]]
+                          :cljs/required? true}
+                         [:repl/namespace])
+               => {:repl/namespace 'cljs.user})))))
+
 
 (defn- ^:dev/after-load run []
   (run-tests))
