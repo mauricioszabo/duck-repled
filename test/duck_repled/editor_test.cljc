@@ -11,7 +11,15 @@
                      [:editor/contents :editor/filename :editor/range])
            => {:editor/contents "(+ 1 2)"
                :editor/filename "foo.clj"
-               :editor/range [[0 0] [0 0]]})))
+               :editor/range [[0 0] [0 0]]})
+
+    (testing "gets current var"
+      (check (core/eql {:editor/data {:contents "foo bar"
+                                      :filename "foo.clj"
+                                      :range [[0 4] [0 4]]}}
+                       [:editor/current-var :editor/current-var-range])
+             => {:editor/current-var-range [[0 4] [0 6]]
+                 :editor/current-var "bar"}))))
 
 (deftest ns-from-contents
   (async-test "gets the current namespace from file"

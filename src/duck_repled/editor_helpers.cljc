@@ -84,7 +84,7 @@ that the cursor is in row and col (0-based)"
         all-nodes (with-meta
                     (node/forms-node nodes)
                     (meta (first nodes)))]
-    (-> all-nodes zip-base/edn)))
+    (-> all-nodes (zip-base/edn {:track-position? true}))))
 
 (defn current-var [code [row col]]
   (let [zipped (zip-from-code code)]

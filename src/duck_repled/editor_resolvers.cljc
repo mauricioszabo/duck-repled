@@ -5,14 +5,6 @@
             [duck-repled.schemas :as schemas]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.editor-helpers :as editor-helpers]))
-            ; [com.wsscode.pathom3.connect.planner :as pcp]))
-;             [com.wsscode.pathom3.interface.async.eql :as p.a.eql]
-;             [com.wsscode.pathom3.plugin :as p.plugin]
-;             [promesa.core :as p]
-;             [repl-tooling.editor-helpers :as helpers]
-;             [repl-tooling.editor-integration.schemas :as schemas]
-;             [repl-tooling.eval :as eval]
-;             [schema.core :as s]))
 
 (connect/defresolver separate-data [{:editor/keys [data]}]
   {::pco/output [:editor/contents :editor/filename :editor/range]}
@@ -35,14 +27,8 @@
   {:repl/namespace (if required? 'cljs.user 'user)})
 
 (pco/defresolver namespace-from-editor [{:keys [editor/namespace]}]
-  {::pco/output [:repl/namespace]
-   ::pco/priority 1}
-
+  {::pco/output [:repl/namespace] ::pco/priority 1}
   {:repl/namespace (symbol namespace)})
-  ; (cond
-  ;   namespace
-  ;   required? {:repl/namespace 'cljs.user}
-  ;   :else {:repl/namespace 'user}))
 
 (connect/defresolver var-from-editor
   [{:editor/keys [contents range]}]

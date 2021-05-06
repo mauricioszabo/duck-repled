@@ -21,6 +21,8 @@
    :editor/ns-range (m/schema range)
    :editor/namespace (m/schema string?)
    :editor/top-blocks (m/schema top-blocks)
+   :editor/current-var (m/schema string?)
+   :editor/current-var-range (m/schema range)
 
    :cljs/required? (m/schema boolean?)
    :repl/namespace (m/schema simple-symbol?)
