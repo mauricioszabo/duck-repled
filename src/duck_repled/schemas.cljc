@@ -15,6 +15,8 @@
    :editor/contents (m/schema string?)
    :editor/filename (m/schema string?)
    :editor/range (m/schema range)
+   :editor/ns-range range
+   :editor/namespace (m/schema string?)
    :map (:map (m/base-schemas))})
 
 #_
