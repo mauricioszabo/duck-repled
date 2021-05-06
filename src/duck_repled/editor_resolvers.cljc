@@ -239,7 +239,7 @@
 ;                    (.-doc res) (assoc :doc (.-doc res))
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
-(def resolvers [separate-data])
+(def resolvers [separate-data namespace-from-editor-data])
 ;                    namespace-from-editor-data namespace-from-editor var-from-editor
 ;                    get-config
 ;

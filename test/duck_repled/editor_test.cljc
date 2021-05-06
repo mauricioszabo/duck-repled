@@ -20,7 +20,18 @@
         (check (core/eql (assoc seed :editor/range [[0 0] [0 0]])
                          [:editor/ns-range :editor/namespace])
                => {:editor/ns-range [[1 0] [1 19]]
-                   :editor/namespace "first.namespace"})))))
+                   :editor/namespace "first.namespace"}))
+
+      (testing "gets namespace if declaration is above current selection"
+        (check (core/eql (assoc seed :editor/range [[2 0] [2 0]])
+                         [:editor/ns-range :editor/namespace])
+               => {:editor/ns-range [[1 0] [1 19]]
+                   :editor/namespace "first.namespace"})
+
+        (check (core/eql (assoc seed :editor/range [[5 0] [5 0]])
+                         [:editor/ns-range :editor/namespace])
+               => {:editor/ns-range [[5 0] [5 13]]
+                   :editor/namespace "second.namespace"})))))
 
 (defn- ^:dev/after-load run []
   (run-tests))
