@@ -1,4 +1,5 @@
 {:lein true
  :builds {:tests {:target :node-script
                   :output-to "lib/main.js"
-                  :main duck-repled.tests/main}}}
+                  :main duck-repled.tests/main
+                  :compiler-options {:warnings {:fn-deprecated false}}}}}
