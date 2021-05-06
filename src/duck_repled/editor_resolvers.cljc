@@ -21,10 +21,13 @@
    :editor/filename (:filename data)
    :editor/range (:range data)})
 
-(pco/defresolver namespace-from-editor-data [{:editor/keys [contents range]}]
+(pco/defresolver top-blocks [{:editor/keys [contents]}]
+  {:editor/top-blocks (editor-helpers/top-blocks contents)})
+
+(pco/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]}]
   {::pco/output [:editor/ns-range :editor/namespace]}
 
-  (if-let [[range ns] (editor-helpers/ns-range-for contents (first range))]
+  (if-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
     {:editor/ns-range  range
      :editor/namespace (str ns)}
     {:editor/namespace nil}))
@@ -239,7 +242,9 @@
 ;                    (.-doc res) (assoc :doc (.-doc res))
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
-(def resolvers [separate-data namespace-from-editor-data])
+(def resolvers [separate-data
+                top-blocks
+                namespace-from-editor-data])
 ;                    namespace-from-editor-data namespace-from-editor var-from-editor
 ;                    get-config
 ;

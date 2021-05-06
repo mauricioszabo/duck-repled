@@ -28,7 +28,7 @@
       (r/read-char reader)
       :whitespace)))
 
-(defn- top-levels [code]
+(defn top-blocks [code]
   (let [reader (r/indexing-push-back-reader code)]
     (loop [sofar []]
       (let [parsed (parse-reader reader)]
@@ -44,9 +44,8 @@
 (defn ns-range-for
   "Gets the current NS range (and ns name) for the current code, considering
 that the cursor is in row and col (0-based)"
-  [code [row col]]
-  (let [levels (top-levels code)
-        before-selection? (fn [[[[_ _] [erow ecol]] _]]
+  [top-levels [row col]]
+  (let [before-selection? (fn [[[[_ _] [erow ecol]] _]]
                             (or (and (= erow row) (<= col ecol))
                                 (< erow row)))
         is-ns? #(and (list? %) (some-> % first (= 'ns)))
@@ -56,10 +55,10 @@ that the cursor is in row and col (0-based)"
                                           (filter #(-> % peek is-ns?))
                                           (map #(update % 1 second))
                                           first))]
-    (or (->> levels
+    (or (->> top-levels
              (take-while before-selection?)
              reverse
              find-ns-for)
-        (->> levels
+        (->> top-levels
              (drop-while before-selection?)
              find-ns-for))))

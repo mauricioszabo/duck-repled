@@ -4,12 +4,12 @@
             [malli.error :as e]
             [malli.util :as mu]))
 
-(def pos [:cat int? int?])
-(def range [:cat [:schema pos] [:schema pos]])
-(def editor-data [:map
-                  [:contents string?]
-                  [:filename string?]
-                  [:range range]])
+(def ^private pos [:cat int? int?])
+(def ^private range [:cat [:schema pos] [:schema pos]])
+(def ^private editor-data [:map
+                           [:contents string?]
+                           [:filename string?]
+                           [:range range]])
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/contents (m/schema string?)
@@ -17,6 +17,7 @@
    :editor/range (m/schema range)
    :editor/ns-range range
    :editor/namespace (m/schema string?)
+   :editor/blocks (m/schema [:map-of range string?])
    :map (:map (m/base-schemas))})
 
 #_
