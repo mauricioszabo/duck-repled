@@ -7,9 +7,7 @@
     (start-watch :tests)))
 
 (defn release []
-  (let [start-server (requiring-resolve 'shadow.cljs.devtools.server/start!)
-        release (requiring-resolve 'shadow.cljs.devtools.api/release)]
-    (start-server)
+  (let [release (requiring-resolve 'shadow.cljs.devtools.api/release)]
     (release :tests)))
 
 (defn stop []
