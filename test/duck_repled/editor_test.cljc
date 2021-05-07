@@ -1,6 +1,6 @@
 (ns duck-repled.editor-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]))
 
 (deftest editor-data
@@ -115,12 +115,3 @@
                           :repl/kind :cljs}
                          [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))
-
-(defn- ^:dev/after-load run []
-  (run-tests))
-
-#_
-(core/eql {:editor/data {:contents "(+ 1 2)"
-                                    :filename "foo.clj"
-                                    :range [[0 0] [0 0]]}}
-          [:editor/contents :editor/filename :editor/range])
