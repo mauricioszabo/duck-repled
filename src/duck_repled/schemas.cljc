@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [range])
   (:require [malli.core :as m]
             [malli.error :as e]
-            [malli.util :as mu]))
+            [malli.util :as mu]
+            [duck-repled.repl-protocol :as repl]))
 
 (def ^private pos [:cat int? int?])
 (def ^private range [:cat [:schema pos] [:schema pos]])
@@ -29,8 +30,15 @@
 
    :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
+   :repl/evaluator (m/schema any?)
+   :repl/code (m/schema string?)
+   :repl/result (m/schema [:map [:result any?]])
+   :repl/error (m/schema [:map [:error any?]])
+
    :map (:map (m/base-schemas))})
 
+#_
+(m/validate [:fn])
 #_
 (validate! [:config/eval-as]
            {:config/eval-as :clja})
