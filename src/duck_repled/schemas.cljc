@@ -5,14 +5,14 @@
             [malli.util :as mu]
             [duck-repled.repl-protocol :as repl]))
 
-(def ^private pos [:cat int? int?])
-(def ^private range [:cat [:schema pos] [:schema pos]])
-(def ^private editor-data [:map
-                           [:contents string?]
-                           [:filename {:maybe true} [:maybe string?]]
-                           [:range range]])
-(def ^private range-and-content [:cat [:schema range] string?])
-(def ^private top-blocks [:vector range-and-content])
+(def ^:private pos [:cat int? int?])
+(def ^:private range [:cat [:schema pos] [:schema pos]])
+(def ^:private editor-data [:map
+                            [:contents string?]
+                            [:filename {:maybe true} [:maybe string?]]
+                            [:range range]])
+(def ^:private range-and-content [:cat [:schema range] string?])
+(def ^:private top-blocks [:vector range-and-content])
 
 (def registry
   {:editor/data (m/schema editor-data)
