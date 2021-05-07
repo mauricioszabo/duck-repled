@@ -14,7 +14,7 @@ jobs:
           command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
           when: always
       - run:
-          command: "clj -Stree"
+          command: "clojure -Stree"
           when: always
       - run:
           command: "lein shadow-release && node lib/main.js --test"
