@@ -4,44 +4,19 @@ defaults: &defaults
     - image: circleci/clojure:openjdk-11-lein-2.9.5-node
 
 jobs:
-  deps:
-    <<: *defaults
-    steps: # commands that comprise the `build` job
-      - checkout # check out source code to working directory
-      - run:
-          command: "lein deps"
-          when: always
-      - persist_to_workspace:
-          root: '.'
-          paths:
-            - ~/.m2
-
   test-cljs:
     <<: *defaults
     steps:
       - checkout
-      - attach_workspace:
-          at: '.'
       - run:
-          command: "lein shadow-release"
-          when: always
-      - run:
-          command: "node lib/main.js --test"
+          command: "lein shadow-release && node lib/main.js --test"
           when: always
 
 workflows:
   version: 2
   default-workflow:
     jobs:
-      - deps:
-          filters:
-            tags:
-              only:
-                - /^v.+/
-
       - test-cljs:
-          requires:
-            - deps
           filters:
             tags:
               only:
