@@ -24,14 +24,16 @@
    :editor/current-var (m/schema string?)
    :editor/current-var-range (m/schema range)
 
-   :cljs/required? (m/schema boolean?)
+   :config/repl-kind (m/schema keyword?)
+   :config/eval-as (m/schema [:enum :clj :cljs :prefer-clj :prefer-cljs])
+
+   :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
    :map (:map (m/base-schemas))})
 
 #_
-(validate! [:editor/top-blocks]
-           {:editor/top-blocks
-            [[[[0 0] [0 1]] "()"] [[[0 3] [0 4]] "()"]]})
+(validate! [:config/eval-as]
+           {:config/eval-as :clja})
 
 (def explainer
   (memoize (fn [schemas]
