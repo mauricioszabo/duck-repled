@@ -1,6 +1,6 @@
 # Duck-REPL'ed
 
-![A Duck](doc/duck.png)
+![A Duck](doc/duck.svg)
 
 A library that transforms you REPL interactions into EQL queries. This means that it's easy to hook up a REPL eval-response, and get autocomplete, var definition, and other niceties "for free".
 
