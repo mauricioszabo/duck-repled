@@ -2,16 +2,17 @@
   (:refer-clojure :exclude [range])
   (:require [malli.core :as m]
             [malli.error :as e]
-            [malli.util :as mu]))
+            [malli.util :as mu]
+            [duck-repled.repl-protocol :as repl]))
 
-(def ^private pos [:cat int? int?])
-(def ^private range [:cat [:schema pos] [:schema pos]])
-(def ^private editor-data [:map
-                           [:contents string?]
-                           [:filename {:maybe true} [:maybe string?]]
-                           [:range range]])
-(def ^private range-and-content [:cat [:schema range] string?])
-(def ^private top-blocks [:vector range-and-content])
+(def ^:private pos [:cat int? int?])
+(def ^:private range [:cat [:schema pos] [:schema pos]])
+(def ^:private editor-data [:map
+                            [:contents string?]
+                            [:filename {:maybe true} [:maybe string?]]
+                            [:range range]])
+(def ^:private range-and-content [:cat [:schema range] string?])
+(def ^:private top-blocks [:vector range-and-content])
 
 (def registry
   {:editor/data (m/schema editor-data)
@@ -24,14 +25,23 @@
    :editor/current-var (m/schema string?)
    :editor/current-var-range (m/schema range)
 
-   :cljs/required? (m/schema boolean?)
+   :config/repl-kind (m/schema keyword?)
+   :config/eval-as (m/schema [:enum :clj :cljs :prefer-clj :prefer-cljs])
+
+   :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
+   :repl/evaluator (m/schema any?)
+   :repl/code (m/schema string?)
+   :repl/result (m/schema [:map [:result any?]])
+   :repl/error (m/schema [:map [:error any?]])
+
    :map (:map (m/base-schemas))})
 
 #_
-(validate! [:editor/top-blocks]
-           {:editor/top-blocks
-            [[[[0 0] [0 1]] "()"] [[[0 3] [0 4]] "()"]]})
+(m/validate [:fn])
+#_
+(validate! [:config/eval-as]
+           {:config/eval-as :clja})
 
 (def explainer
   (memoize (fn [schemas]

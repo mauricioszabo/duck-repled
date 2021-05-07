@@ -1,12 +1,14 @@
 (ns duck-repled.core
-  (:require [duck-repled.editor-resolvers :as editor]
-            [com.wsscode.pathom3.connect.indexes :as indexes]
+  (:require [com.wsscode.pathom3.connect.indexes :as indexes]
             [com.wsscode.pathom3.interface.async.eql :as eql]
             [com.wsscode.pathom3.plugin :as plugin]
             [com.wsscode.pathom3.connect.built-in.plugins :as plugins]
-            [duck-repled.schemas :as schemas]))
+            [duck-repled.schemas :as schemas]
+            [duck-repled.editor-resolvers :as editor]
+            [duck-repled.repl-resolvers :as repl]))
 
-(def resolvers (concat editor/resolvers))
+(def ^:private resolvers (concat editor/resolvers
+                                 repl/resolvers))
 (def ^:private env (-> resolvers
                        indexes/register
                        (plugin/register (plugins/attribute-errors-plugin))))

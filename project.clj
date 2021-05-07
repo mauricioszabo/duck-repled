@@ -12,7 +12,9 @@
   :source-paths ["src" "pathom3/src"]
 
   :repl-options {:init-ns user}
-  :aliases {"watch" ["run" "-m" "user/watch"]}
+  :aliases {"watch" ["run" "-m" "user/watch"]
+            "shadow-release" ["run" "-m" "user/release"]}
   :profiles {:dev {:dependencies [[thheller/shadow-cljs "2.12.5"]
-                                  [check "0.2.0-SNAPSHOT"]]
+                                  [check "0.2.0-SNAPSHOT"]
+                                  [borkdude/sci "0.2.5"]]
                    :source-paths ["dev" "test"]}})

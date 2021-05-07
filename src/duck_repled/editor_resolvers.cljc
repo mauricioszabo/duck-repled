@@ -1,8 +1,6 @@
 (ns duck-repled.editor-resolvers
-  (:require [malli.core :as m]
-            [malli.error :as e]
+  (:require [clojure.string :as str]
             [duck-repled.connect :as connect]
-            [duck-repled.schemas :as schemas]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.editor-helpers :as editor-helpers]))
 
@@ -24,12 +22,41 @@
     {:editor/ns-range range :editor/namespace (str ns)}
     ::pco/unknown-value))
 
-(pco/defresolver default-namespaces [{:keys [cljs/required?]}]
-  {:repl/namespace (if required? 'cljs.user 'user)})
+(connect/defresolver default-namespaces [{:keys [repl/kind]}]
+  {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
 
-(pco/defresolver namespace-from-editor [{:keys [editor/namespace]}]
+(connect/defresolver namespace-from-editor [{:keys [editor/namespace]}]
   {::pco/output [:repl/namespace] ::pco/priority 1}
   {:repl/namespace (symbol namespace)})
+
+(connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
+  {::pco/output [:repl/kind] ::pco/priority 2}
+
+  (when (not= :clj repl-kind)
+    {:repl/kind repl-kind}))
+
+(connect/defresolver repl-kind-from-config [{:config/keys [eval-as]}]
+  {::pco/output [:repl/kind] ::pco/priority 1}
+
+  (case eval-as
+    :clj {:repl/kind :clj}
+    :cljs {:repl/kind :cljs}
+    nil))
+    ; ::pco/unknown-value))
+
+(connect/defresolver repl-kind-from-config-and-file
+  [{:keys [config/eval-as editor/filename]}]
+  {::pco/output [:repl/kind]}
+
+  (let [cljs-file? (str/ends-with? filename ".cljs")
+        cljc-file? (or (str/ends-with? filename ".cljc")
+                       (str/ends-with? filename ".cljx"))]
+    (case eval-as
+      :prefer-clj {:repl/kind (if cljs-file? :cljs :clj)}
+      :prefer-cljs {:repl/kind (if (and (not cljs-file?) (not cljc-file?))
+                                 :clj
+                                 :cljs)}
+      nil)))
 
 (connect/defresolver var-from-editor
   [{:editor/keys [contents range]}]
@@ -232,9 +259,12 @@
 ;                    (.-doc res) (assoc :doc (.-doc res))
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
+
 (def resolvers [separate-data top-blocks
                 default-namespaces namespace-from-editor-data namespace-from-editor
-                var-from-editor])
+                var-from-editor
+
+                repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file])
 ;                    get-config
 ;
 ;                    ; Namespaces resolvers

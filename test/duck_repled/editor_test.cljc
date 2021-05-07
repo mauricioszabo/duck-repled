@@ -1,6 +1,6 @@
 (ns duck-repled.editor-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]))
 
 (deftest editor-data
@@ -27,6 +27,58 @@
                        [:editor/current-var :editor/current-var-range])
              => {:editor/current-var-range [[0 4] [0 6]]
                  :editor/current-var "bar"}))))
+
+(deftest config-for-repl
+  (async-test "configure how we eval CLJ or CLJS"
+    (testing "configuring everything to be CLJ or CLJS"
+      (check (core/eql {:config/repl-kind :clj, :config/eval-as :clj}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj, :config/eval-as :cljs} [:repl/kind])
+             => {:repl/kind :cljs}))
+
+    (testing "will always be 'another kind' if we're not in CLJ REPL"
+      (check (core/eql {:config/repl-kind :cljs, :config/eval-as :clj} [:repl/kind])
+             => {:repl/kind :cljs}))
+
+    (testing "if `:prefer-clj` is used, will use clj on .clj and .cljc files"
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.clj"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.cljc"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.cljs"}
+                       [:repl/kind])
+             => {:repl/kind :cljs}))
+
+    (testing "if `:prefer-cljs` is used, will use cljs on .cljs and .cljc files"
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.clj"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.cljc"}
+                       [:repl/kind])
+             => {:repl/kind :cljs})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.cljs"}
+                       [:repl/kind])
+             => {:repl/kind :cljs}))))
 
 (deftest ns-from-contents
   (async-test "gets the current namespace from file"
@@ -55,21 +107,11 @@
 
       (testing "fallback to default if there's no NS in editor"
         (check (core/eql {:editor/contents "" :editor/range [[2 0] [2 0]]
-                          :cljs/required? false}
+                          :repl/kind :clj}
                          [:repl/namespace])
                => {:repl/namespace 'user})
 
         (check (core/eql {:editor/contents "" :editor/range [[2 0] [2 0]]
-                          :cljs/required? true}
+                          :repl/kind :cljs}
                          [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))
-
-
-(defn- ^:dev/after-load run []
-  (run-tests))
-
-#_
-(core/eql {:editor/data {:contents "(+ 1 2)"
-                                    :filename "foo.clj"
-                                    :range [[0 0] [0 0]]}}
-          [:editor/contents :editor/filename :editor/range])
