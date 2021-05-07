@@ -1,9 +1,6 @@
 (ns duck-repled.editor-resolvers
-  (:require [malli.core :as m]
-            [malli.error :as e]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [duck-repled.connect :as connect]
-            [duck-repled.schemas :as schemas]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.editor-helpers :as editor-helpers]))
 
@@ -25,10 +22,10 @@
     {:editor/ns-range range :editor/namespace (str ns)}
     ::pco/unknown-value))
 
-(pco/defresolver default-namespaces [{:keys [repl/kind]}]
+(connect/defresolver default-namespaces [{:keys [repl/kind]}]
   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
 
-(pco/defresolver namespace-from-editor [{:keys [editor/namespace]}]
+(connect/defresolver namespace-from-editor [{:keys [editor/namespace]}]
   {::pco/output [:repl/namespace] ::pco/priority 1}
   {:repl/namespace (symbol namespace)})
 
@@ -262,6 +259,7 @@
 ;                    (.-doc res) (assoc :doc (.-doc res))
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
+
 (def resolvers [separate-data top-blocks
                 default-namespaces namespace-from-editor-data namespace-from-editor
                 var-from-editor
