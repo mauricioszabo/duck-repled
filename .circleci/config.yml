@@ -1,13 +1,21 @@
 version: 2.1
 defaults: &defaults
   docker:
-    - image: circleci/clojure:openjdk-11-lein-node
+    - image: circleci/clojure:openjdk-11-tools-deps-node
+  environment:
+    PATH=/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/local/openjdk-11:/usr/local/openjdk-11/bin
 
 jobs:
   test-cljs:
     <<: *defaults
     steps:
       - checkout
+      - run:
+          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
+          when: always
+      - run:
+          command: "clojure -Stree"
+          when: always
       - run:
           command: "lein shadow-release && node lib/main.js --test"
           when: always
