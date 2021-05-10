@@ -33,6 +33,12 @@
   (when-let [[range text] (editor-helpers/block-for contents (first range))]
     {:editor/block {:text/contents text :text/range range}}))
 
+(connect/defresolver current-selection [{:editor/keys [contents range]}]
+  {::pco/output [{:editor/selection [:text/contents :text/range]}]}
+
+  (when-let [text (editor-helpers/text-in-range contents range)]
+    {:editor/selection {:text/contents text :text/range range}}))
+
 (connect/defresolver default-namespaces [{:keys [repl/kind]}]
   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
 
@@ -274,7 +280,7 @@
 
 (def resolvers [separate-data top-blocks
                 default-namespaces namespace-from-editor-data namespace-from-editor
-                var-from-editor current-top-block current-block
+                var-from-editor current-top-block current-block current-selection
 
                 repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file])
 ;                    get-config

@@ -151,3 +151,15 @@ that the cursor is in row and col (0-based)"
     (when node-block
       [[[(dec row) (dec col)] [(dec end-row) (- end-col 2)]]
        (node/string node-block)])))
+
+(defn text-in-range [text [[row1 col1] [row2 col2]]]
+  (let [lines (str/split-lines text)
+        rows-offset (- (min row2 (count lines)) row1)]
+    (-> lines
+        (subvec row1 (min (count lines) (inc row2)))
+        (update 0 #(str/join "" (drop col1 %)))
+        (update rows-offset #(str/join "" (take (inc (if (zero? rows-offset)
+                                                       (- col2 col1)
+                                                       col2))
+                                                %)))
+        (->> (str/join "\n")))))

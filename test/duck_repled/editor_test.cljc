@@ -43,7 +43,15 @@
                                       :range [[3 4] [3 7]]}}
                        [{:editor/block [:text/contents :text/range]}])
              => {:editor/block {:text/range [[3 1] [3 6]]
-                                :text/contents "( 2 3)"}}))))
+                                :text/contents "( 2 3)"}}))
+
+    (testing "gets current selection"
+      (check (core/eql {:editor/data {:contents "(+ 1 2)\n\n( \n ( 2 3))"
+                                      :filename "foo.clj"
+                                      :range [[2 0] [3 6]]}}
+                       [{:editor/selection [:text/contents :text/range]}])
+             => {:editor/selection {:text/range [[2 0] [3 6]]
+                                    :text/contents "( \n ( 2 3)"}}))))
 
 (deftest config-for-repl
   (async-test "configure how we eval CLJ or CLJS"

@@ -28,6 +28,7 @@
    :editor/ns (m/schema contents)
    :editor/top-block (m/schema contents)
    :editor/block (m/schema contents)
+   :editor/selection (m/schema contents)
    ; :editor/current-var-range (m/schema range)
 
    :text/contents (m/schema string?)
