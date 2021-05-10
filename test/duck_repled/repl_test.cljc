@@ -33,11 +33,24 @@
                          [:repl/error])
                => {:repl/error {:error any?}}))
 
-      (testing "sends ROW/COL and NS if availagle"
+      (testing "sends ROW/COL and NS if available"
         (check (core/eql {:repl/evaluator sci :repl/namespace 'foo
                           :text/contents "some-var" :text/range [[2 4] [4 5]]}
                          [:repl/result])
-               => {:repl/result {:result 10 :options {:row 2 :col 4}}})))))
+               => {:repl/result {:result 10 :options {:row 2 :col 4}}}))
+
+      (testing "evaluates fragments of editor in REPL"
+        (promesa.core/let [sci (prepare-sci)
+                           editor {:filename "foo.clj"
+                                   :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 some-var))"
+                                   :range [[3 7] [3 8]]}]
+          (check (core/eql {:editor/data editor :repl/evaluator sci}
+                           [{:editor/selection [ :repl/result]}
+                            {:editor/block [ :repl/result]}
+                            {:editor/top-block [ :repl/result]}])
+                 => {:editor/selection {:repl/result {:result 5}}
+                     :editor/block {:repl/result {:result 15}}
+                     :editor/top-block {:repl/result {:result -8}}}))))))
 
 #_
 (deftest repl-definition
@@ -58,3 +71,14 @@
 
 (defn- ^:dev/after-load run []
   (run-tests))
+
+#_
+(promesa.core/let [sci (prepare-sci)
+                   editor {:filename "foo.clj"
+                           :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 6))"
+                           :range [[3 7] [3 8]]}
+                   res (core/eql {:editor/data editor :repl/evaluator sci :text/contents "20"}
+                                [{:editor/selection [:repl/namespace :repl/result]}
+                                 {:editor/block [:repl/namespace :repl/result]}
+                                 {:editor/top-block [:repl/namespace :repl/result]}])]
+  res)

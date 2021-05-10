@@ -15,29 +15,45 @@
 (connect/defresolver top-blocks [{:editor/keys [contents]}]
   {:editor/top-blocks (editor-helpers/top-blocks contents)})
 
-(connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]}]
-  {::pco/output [{:editor/ns [:text/contents :text/range]}]}
+(connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]
+                                                  :as inputs}]
+  {::pco/input [:editor/top-blocks :editor/range
+                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
+   ::pco/output [{:editor/ns [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-    {:editor/ns {:text/contents (str ns) :text/range range}}))
+    {:editor/ns (merge {:text/contents (str ns) :text/range range}
+                       (select-keys inputs [:repl/evaluator :editor/ns]))}))
 
-(connect/defresolver current-top-block [{:editor/keys [top-blocks range]}]
-  {::pco/output [{:editor/top-block [:text/contents :text/range]}]}
+(connect/defresolver current-top-block [{:editor/keys [top-blocks range]
+                                         :as inputs}]
+  {::pco/input [:editor/top-blocks :editor/range
+                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
+   ::pco/output [{:editor/top-block [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range text] (editor-helpers/top-block-for top-blocks (first range))]
-    {:editor/top-block {:text/contents text :text/range range}}))
+    {:editor/top-block (merge {:text/contents text :text/range range}
+                              (select-keys inputs [:repl/evaluator :editor/ns]))}))
 
-(connect/defresolver current-block [{:editor/keys [contents range]}]
-  {::pco/output [{:editor/block [:text/contents :text/range]}]}
+(connect/defresolver current-block [{:editor/keys [contents range]
+                                     :as inputs}]
+  {::pco/input [:editor/contents :editor/range
+                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
+   ::pco/output [{:editor/block [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range text] (editor-helpers/block-for contents (first range))]
-    {:editor/block {:text/contents text :text/range range}}))
+    {:editor/block (merge {:text/contents text :text/range range}
+                          (select-keys inputs [:repl/evaluator :editor/ns]))}))
 
-(connect/defresolver current-selection [{:editor/keys [contents range]}]
-  {::pco/output [{:editor/selection [:text/contents :text/range]}]}
+(connect/defresolver current-selection [{:editor/keys [contents range]
+                                         :as inputs}]
+  {::pco/input [:editor/contents :editor/range
+                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
+   ::pco/output [{:editor/selection [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [text (editor-helpers/text-in-range contents range)]
-    {:editor/selection {:text/contents text :text/range range}}))
+    {:editor/selection (merge {:text/contents text :text/range range}
+                              (select-keys inputs [:repl/evaluator :editor/ns]))}))
 
 (connect/defresolver default-namespaces [{:keys [repl/kind]}]
   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})

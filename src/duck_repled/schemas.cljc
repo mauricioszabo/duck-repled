@@ -15,7 +15,8 @@
 (def ^:private top-blocks [:vector range-and-content])
 (def ^:private contents [:map
                          [:text/contents string?]
-                         [:text/range range]])
+                         [:text/range range]
+                         [:repl/evaluator {:optional true} any?]])
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/contents (m/schema string?)
