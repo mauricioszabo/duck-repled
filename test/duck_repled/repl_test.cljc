@@ -62,23 +62,5 @@
 
       (testing "will check for "))))
 
-#_
-(promesa.core/let
-  [sci (prepare-sci)
-   res (core/eql [:repl/result])]
-  res)
-  ; (meta res))
-
 (defn- ^:dev/after-load run []
   (run-tests))
-
-#_
-(promesa.core/let [sci (prepare-sci)
-                   editor {:filename "foo.clj"
-                           :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 6))"
-                           :range [[3 7] [3 8]]}
-                   res (core/eql {:editor/data editor :repl/evaluator sci :text/contents "20"}
-                                [{:editor/selection [:repl/namespace :repl/result]}
-                                 {:editor/block [:repl/namespace :repl/result]}
-                                 {:editor/top-block [:repl/namespace :repl/result]}])]
-  res)
