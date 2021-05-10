@@ -16,18 +16,30 @@
   {:editor/top-blocks (editor-helpers/top-blocks contents)})
 
 (connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]}]
-  {::pco/output [:editor/ns-range :editor/namespace]}
+  {::pco/output [{:editor/ns [:text/contents :text/range]}]}
 
-  (if-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-    {:editor/ns-range range :editor/namespace (str ns)}
-    ::pco/unknown-value))
+  (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
+    {:editor/ns {:text/contents (str ns) :text/range range}}))
+
+(connect/defresolver current-top-block [{:editor/keys [top-blocks range]}]
+  {::pco/output [{:editor/top-block [:text/contents :text/range]}]}
+
+  (when-let [[range text] (editor-helpers/top-block-for top-blocks (first range))]
+    {:editor/top-block {:text/contents text :text/range range}}))
+
+(connect/defresolver current-block [{:editor/keys [contents range]}]
+  {::pco/output [{:editor/block [:text/contents :text/range]}]}
+
+  (when-let [[range text] (editor-helpers/block-for contents (first range))]
+    {:editor/block {:text/contents text :text/range range}}))
 
 (connect/defresolver default-namespaces [{:keys [repl/kind]}]
   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
 
-(connect/defresolver namespace-from-editor [{:keys [editor/namespace]}]
-  {::pco/output [:repl/namespace] ::pco/priority 1}
-  {:repl/namespace (symbol namespace)})
+(connect/defresolver namespace-from-editor [inputs]
+  {::pco/input [{:editor/ns [:text/contents]}]
+   ::pco/output [:repl/namespace] ::pco/priority 1}
+  {:repl/namespace (-> inputs :editor/ns :text/contents symbol)})
 
 (connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
   {::pco/output [:repl/kind] ::pco/priority 2}
@@ -60,11 +72,11 @@
 
 (connect/defresolver var-from-editor
   [{:editor/keys [contents range]}]
-  {::pco/output [:editor/current-var :editor/current-var-range]}
+  {::pco/output [{:editor/current-var [:text/contents :text/range]}]}
 
   (when-let [[range curr-var] (editor-helpers/current-var contents (first range))]
-    {:editor/current-var       curr-var
-     :editor/current-var-range range}))
+    {:editor/current-var {:text/contents curr-var
+                          :text/range range}}))
 
 ; (pco/defresolver all-namespaces
 ;   [env {:keys [repl/clj]}]
@@ -262,7 +274,7 @@
 
 (def resolvers [separate-data top-blocks
                 default-namespaces namespace-from-editor-data namespace-from-editor
-                var-from-editor
+                var-from-editor current-top-block current-block
 
                 repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file])
 ;                    get-config

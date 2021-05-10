@@ -2,11 +2,10 @@
   (:require [clojure.string :as str]
             [cljs.reader :as edn]
             [cljs.tools.reader :as reader]
-            ; [rewrite-clj.zip.move :as move]
+            [rewrite-clj.zip.move :as move]
             [rewrite-clj.zip :as zip]
             [rewrite-clj.zip.base :as zip-base]
             [rewrite-clj.node :as node]
-            ; [rewrite-clj.reader :as clj-reader]
             [clojure.tools.reader.reader-types :as r]
             [rewrite-clj.parser :as parser]))
 
@@ -90,3 +89,65 @@ that the cursor is in row and col (0-based)"
   (let [zipped (zip-from-code code)]
     (or (current-var* zipped row col)
         (current-var* zipped row (dec col)))))
+
+
+(defn in-range? [{:keys [row col end-row end-col]} {r :row c :col}]
+  (and (>= r row)
+       (<= r end-row)
+       (if (= r row) (>= c col) true)
+       (if (= r end-row) (<= c end-col) true)))
+
+(defn top-block-for
+  "Gets the top-level from the code (a string) to the current row and col (0-based)"
+  [tops [row col]]
+  (let [in-range? (fn [[[[b-row b-col] [e-row e-col]]]]
+                    (or (and (<= b-row row) (< row e-row))
+                        (and (<= b-row row e-row)
+                             (or (<= b-col col e-col)
+                                 (<= b-col (dec col) e-col)))))]
+    (->> tops (filter in-range?) first)))
+
+(defn- find-inners-by-pos
+  "Find last node (if more than one node) that is in range of pos and
+  satisfying the given predicate depth first from initial zipper
+  location."
+  [zloc pos]
+  (->> zloc
+       (iterate zip/next)
+       (take-while identity)
+       (take-while (complement move/end?))
+       (filter #(in-range? (-> % zip/node meta) pos))))
+
+(defn- reader-tag? [node]
+  (when node
+    (or (instance? rewrite-clj.node.reader-macro.ReaderMacroNode node)
+        (instance? rewrite-clj.node.fn/FnNode node)
+        (instance? rewrite-clj.node.quote.QuoteNode node)
+        (instance? rewrite-clj.node.reader-macro.DerefNode node))))
+
+(defn- filter-forms [nodes]
+  (when nodes
+    (let [valid-tag? (comp #{:vector :list :map :set :quote} :tag)]
+      (->> nodes
+           (map zip/node)
+           (partition-all 2 1)
+           (map (fn [[fst snd]]
+                  (cond
+                    (reader-tag? fst) fst
+                    (-> fst :tag (= :list) (and snd (reader-tag? snd))) snd
+                    (valid-tag? fst) fst)))
+           (filter identity)
+           first))))
+
+(defn block-for
+  "Gets the current block from the code (a string) to the current row and col (0-based)"
+  [code [row col]]
+  (let [node-block (-> code
+                       zip-from-code
+                       (find-inners-by-pos {:row (inc row) :col (inc col)})
+                       reverse
+                       filter-forms)
+        {:keys [row col end-row end-col]} (some-> node-block meta)]
+    (when node-block
+      [[[(dec row) (dec col)] [(dec end-row) (- end-col 2)]]
+       (node/string node-block)])))
