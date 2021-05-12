@@ -5,11 +5,10 @@
             [duck-repled.repl-protocol :as repl]
             [promesa.core :as p]))
 
-(connect/defresolver get-right-repl [{:keys [seed]}
-                                     {:repl/keys [kind]}]
+(connect/defresolver get-right-repl [{:repl/keys [kind evaluators]}]
   {::pco/output [:repl/evaluator :repl/cljs]}
-  (prn :KIND kind)
-  (when-let [{:keys [clj cljs]} (:repl/evaluators seed)]
+
+  (let [{:keys [clj cljs]} evaluators]
     (cond
       (not= kind :cljs) {:repl/evaluator clj}
       (nil? clj) {:repl/evaluator cljs}

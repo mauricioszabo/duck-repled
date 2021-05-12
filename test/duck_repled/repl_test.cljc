@@ -21,30 +21,28 @@
             (catch :default e
               {:error e})))))))
 
-#_
 (deftest repl-definition
   (async-test "will run on CLJ or CLJS REPL depending on what's expected"
     (let [clj-ish (prepare-sci)
           cljs-ish (prepare-sci)
-          evals {:cljs cljs-ish :clj clj-ish}
-          data {:contents "(ns foo)\nflavor"
-                :range [[1 0] [1 0]]}]
+          seed {:repl/evaluators {:cljs cljs-ish :clj clj-ish}
+                :editor/data {:contents "(ns foo)\nflavor"
+                              :range [[1 0] [1 0]]}
+                :config/eval-as :prefer-clj}]
       (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
       (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"})
 
+      (def seed seed)
       (testing "will use Clojure REPL"
-        (check (core/eql {:repl/evaluators evals
-                          :editor/data (assoc data :filename "file.clj")}
-                         [:repl/result])
-               => {:repl/result {:result :clj}}))
+        (check (core/eql (assoc-in seed [:editor/data :filename] "file.clj")
+                         [{:editor/current-var [:repl/result]}])
+               => {:editor/current-var {:repl/result {:result :clj}}}))
 
       (testing "will use ClojureScript REPL"
-        (check (core/eql {:repl/evaluators evals
-                          :editor/data (assoc data :filename "file.cljs")}
-                         [:repl/result])
-               => {:repl/result {:result :cljs}})))))
+        (check (core/eql (assoc-in seed [:editor/data :filename] "file.cljs")
+                         [{:editor/current-var [:repl/result]}])
+               => {:editor/current-var {:repl/result {:result :cljs}}})))))
 
-#_
 (deftest eval-commands
   (async-test "given that you have a REPL, you can eval commands"
     (let [sci (prepare-sci)]
@@ -63,7 +61,6 @@
                          [:repl/result])
                => {:repl/result {:result 10 :options {:row 2 :col 4}}}))
 
-      #_
       (testing "evaluates fragments of editor in REPL"
         (promesa.core/let [sci (prepare-sci)
                            editor {:filename "foo.clj"
