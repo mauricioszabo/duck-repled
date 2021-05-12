@@ -1,15 +1,22 @@
 (ns duck-repled.editor-resolvers
   (:require [clojure.string :as str]
+            [duck-repled.schemas :as schemas]
             [duck-repled.connect :as connect]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.editor-helpers :as editor-helpers]))
 
-(connect/defresolver separate-data [{:editor/keys [data]}]
+(connect/defresolver seed-data [{:keys [seed]} _]
+  {::pco/output (->> schemas/registry keys (remove #{:map}) vec)
+   ::pco/priority 99}
+  seed)
+
+(connect/defresolver separate-data [{editor-data :editor/data}]
   {::pco/output [:editor/contents :editor/filename :editor/range]}
 
-  (let [file (:filename data)]
-    (cond-> {:editor/contents (:contents data)
-             :editor/range (:range data)}
+  ; (when-let [editor-data (-> env :seed :editor/data)]
+  (let [file (:filename editor-data)]
+    (cond-> {:editor/contents (:contents editor-data)
+             :editor/range (:range editor-data)}
             file (assoc :editor/filename file))))
 
 (connect/defresolver top-blocks [{:editor/keys [contents]}]
@@ -22,8 +29,7 @@
    ::pco/output [{:editor/ns [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-    {:editor/ns (merge {:text/contents (str ns) :text/range range}
-                       (select-keys inputs [:repl/evaluator :editor/ns]))}))
+    {:editor/ns {:text/contents (str ns) :text/range range}}))
 
 (connect/defresolver current-top-block [{:editor/keys [top-blocks range]
                                          :as inputs}]
@@ -32,8 +38,7 @@
    ::pco/output [{:editor/top-block [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range text] (editor-helpers/top-block-for top-blocks (first range))]
-    {:editor/top-block (merge {:text/contents text :text/range range}
-                              (select-keys inputs [:repl/evaluator :editor/ns]))}))
+    {:editor/top-block {:text/contents text :text/range range}}))
 
 (connect/defresolver current-block [{:editor/keys [contents range]
                                      :as inputs}]
@@ -42,8 +47,7 @@
    ::pco/output [{:editor/block [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [[range text] (editor-helpers/block-for contents (first range))]
-    {:editor/block (merge {:text/contents text :text/range range}
-                          (select-keys inputs [:repl/evaluator :editor/ns]))}))
+    {:editor/block {:text/contents text :text/range range}}))
 
 (connect/defresolver current-selection [{:editor/keys [contents range]
                                          :as inputs}]
@@ -52,10 +56,9 @@
    ::pco/output [{:editor/selection [:text/contents :text/range :repl/evaluator]}]}
 
   (when-let [text (editor-helpers/text-in-range contents range)]
-    {:editor/selection (merge {:text/contents text :text/range range}
-                              (select-keys inputs [:repl/evaluator :editor/ns]))}))
+    {:editor/selection {:text/contents text :text/range range}}))
 
-(connect/defresolver default-namespaces [{:keys [repl/kind]}]
+(connect/defresolver default-namespaces [env {:keys [repl/kind]}]
   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
 
 (connect/defresolver namespace-from-editor [inputs]
@@ -66,22 +69,25 @@
 (connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
   {::pco/output [:repl/kind] ::pco/priority 2}
 
+  (prn :CHECKING-PRIORITY-2)
   (when (not= :clj repl-kind)
     {:repl/kind repl-kind}))
 
 (connect/defresolver repl-kind-from-config [{:config/keys [eval-as]}]
   {::pco/output [:repl/kind] ::pco/priority 1}
 
-  (case eval-as
-    :clj {:repl/kind :clj}
-    :cljs {:repl/kind :cljs}
-    nil))
+  (prn :CHECKING-PRIORITY-1))
+  ; (case eval-as
+  ;   :clj {:repl/kind :clj}
+  ;   :cljs {:repl/kind :cljs}
+  ;   nil))
     ; ::pco/unknown-value))
 
 (connect/defresolver repl-kind-from-config-and-file
   [{:keys [config/eval-as editor/filename]}]
   {::pco/output [:repl/kind]}
 
+  (prn :CHECKING-PRIORITY-0)
   (let [cljs-file? (str/ends-with? filename ".cljs")
         cljc-file? (or (str/ends-with? filename ".cljc")
                        (str/ends-with? filename ".cljx"))]
@@ -294,37 +300,8 @@
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
 
-(def resolvers [separate-data top-blocks
+(def resolvers [seed-data separate-data top-blocks
                 default-namespaces namespace-from-editor-data namespace-from-editor
                 var-from-editor current-top-block current-block current-selection
 
                 repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file])
-;                    get-config
-;
-;                    ; Namespaces resolvers
-;                    all-namespaces all-vars-in-ns
-;
-;                    ; REPLs resolvers
-;                    need-cljs need-cljs-from-config
-;                    ; repls-from-config repls-from-config+editor-data
-;                    repls-for-evaluation
-;
-;                    ; Vars resolvers
-;                    cljs-env fqn-var meta-for-var spec-for-var
-;
-;                    ;; KONDO
-;                    analysis-from-kondo fqn-from-kondo meta-from-kondo])
-;
-; (defonce plan-cache* (atom {}))
-;
-
-;
-; (s/defn eql :- js/Promise
-;   "Queries the Pathom graph for the REPLs"
-;   [params :- {(s/optional-key :editor-state) schemas/EditorState
-;               (s/optional-key :callbacks)    s/Any}
-;    query]
-;   (let [params (cond-> params
-;                  (-> params :callbacks nil?)
-;                  (assoc :callbacks (-> params :editor-state deref :editor/callbacks)))]
-;     (p.a.eql/process (merge env params) query)))

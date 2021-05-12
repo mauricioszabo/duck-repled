@@ -13,14 +13,18 @@
                        indexes/register
                        (plugin/register (plugins/attribute-errors-plugin))))
 
+(def ^:private env-keys [:editor/data :repl/evaluators])
 (defn eql
   ([query]
    (eql/process env query))
   ([seed query]
    (schemas/validate! (keys seed) seed)
-   (eql/process env seed query)))
+   (eql/process (assoc env :seed seed) query)))
 
 (defn foo
   "I don't do a whole lot."
   [x]
   (println x "Hello, World!"))
+
+#_
+(eql/process (assoc env :bar {:foo 10}) [:foo])
