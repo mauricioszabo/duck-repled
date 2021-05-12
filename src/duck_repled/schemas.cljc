@@ -40,9 +40,9 @@
 
    :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
+   :repl/evaluators (m/schema [:map [:clj any?] [:cljs any?]])
    :repl/evaluator (m/schema any?)
    :repl/clj (m/schema any?)
-   :repl/cljs (m/schema any?)
    :repl/code (m/schema string?)
    :repl/result (m/schema [:map [:result any?]])
    :repl/error (m/schema [:map [:error any?]])

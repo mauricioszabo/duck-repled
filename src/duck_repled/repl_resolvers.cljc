@@ -5,6 +5,17 @@
             [duck-repled.repl-protocol :as repl]
             [promesa.core :as p]))
 
+(connect/defresolver get-right-repl [{:keys [seed]}
+                                     {:repl/keys [kind]}]
+  {::pco/output [:repl/evaluator :repl/cljs]}
+  (prn :KIND kind)
+  (when-let [{:keys [clj cljs]} (:repl/evaluators seed)]
+    (cond
+      (not= kind :cljs) {:repl/evaluator clj}
+      (nil? clj) {:repl/evaluator cljs}
+      :embedded-cljs {:repl/clj clj
+                      :repl/evaluator cljs})))
+
 (connect/defresolver repl-eval [{:repl/keys [evaluator namespace]
                                  :text/keys [contents range]}]
   {::pco/input [:repl/evaluator :text/contents
@@ -20,4 +31,4 @@
       {:repl/error result}
       {:repl/result result})))
 
-(def resolvers [repl-eval])
+(def resolvers [get-right-repl repl-eval])

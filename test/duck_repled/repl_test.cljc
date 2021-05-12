@@ -21,6 +21,30 @@
             (catch :default e
               {:error e})))))))
 
+#_
+(deftest repl-definition
+  (async-test "will run on CLJ or CLJS REPL depending on what's expected"
+    (let [clj-ish (prepare-sci)
+          cljs-ish (prepare-sci)
+          evals {:cljs cljs-ish :clj clj-ish}
+          data {:contents "(ns foo)\nflavor"
+                :range [[1 0] [1 0]]}]
+      (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
+      (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"})
+
+      (testing "will use Clojure REPL"
+        (check (core/eql {:repl/evaluators evals
+                          :editor/data (assoc data :filename "file.clj")}
+                         [:repl/result])
+               => {:repl/result {:result :clj}}))
+
+      (testing "will use ClojureScript REPL"
+        (check (core/eql {:repl/evaluators evals
+                          :editor/data (assoc data :filename "file.cljs")}
+                         [:repl/result])
+               => {:repl/result {:result :cljs}})))))
+
+#_
 (deftest eval-commands
   (async-test "given that you have a REPL, you can eval commands"
     (let [sci (prepare-sci)]
@@ -39,28 +63,19 @@
                          [:repl/result])
                => {:repl/result {:result 10 :options {:row 2 :col 4}}}))
 
+      #_
       (testing "evaluates fragments of editor in REPL"
         (promesa.core/let [sci (prepare-sci)
                            editor {:filename "foo.clj"
                                    :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 some-var))"
                                    :range [[3 7] [3 8]]}]
           (check (core/eql {:editor/data editor :repl/evaluator sci}
-                           [{:editor/selection [ :repl/result]}
-                            {:editor/block [ :repl/result]}
-                            {:editor/top-block [ :repl/result]}])
+                           [{:editor/selection [:repl/result]}
+                            {:editor/block [:repl/result]}
+                            {:editor/top-block [:repl/result]}])
                  => {:editor/selection {:repl/result {:result 5}}
                      :editor/block {:repl/result {:result 15}}
                      :editor/top-block {:repl/result {:result -8}}}))))))
-
-#_
-(deftest repl-definition
-  (async-test "will run on CLJ or CLJS REPL depending on what's expected"
-    (p/let [clj-ish (prepare-sci)
-            cljs-ish (prepare-sci)]
-      (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
-      (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"})
-
-      (testing "will check for "))))
 
 (defn- ^:dev/after-load run []
   (run-tests))
