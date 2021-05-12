@@ -55,57 +55,56 @@
 
 (deftest config-for-repl
   (async-test "configure how we eval CLJ or CLJS"
-    ; (testing "configuring everything to be CLJ or CLJS"
-    ;   (check (core/eql {:config/repl-kind :clj, :config/eval-as :clj}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :clj})
-    ;
-    ;   (check (core/eql {:config/repl-kind :clj, :config/eval-as :cljs} [:repl/kind])
-    ;          => {:repl/kind :cljs}))
-    ;
+    (testing "configuring everything to be CLJ or CLJS"
+      (check (core/eql {:config/repl-kind :clj, :config/eval-as :clj}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj, :config/eval-as :cljs} [:repl/kind])
+             => {:repl/kind :cljs}))
+
     (testing "will always be 'another kind' if we're not in CLJ REPL"
       (check (core/eql {:config/repl-kind :cljs, :config/eval-as :clj}
                        [:config/repl-kind :repl/kind])
+             => {:repl/kind :cljs}))
+
+    (testing "if `:prefer-clj` is used, will use clj on .clj and .cljc files"
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.clj"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.cljc"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-clj
+                        :editor/filename "somefile.cljs"}
+                       [:repl/kind])
+             => {:repl/kind :cljs}))
+
+    (testing "if `:prefer-cljs` is used, will use cljs on .cljs and .cljc files"
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.clj"}
+                       [:repl/kind])
+             => {:repl/kind :clj})
+
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.cljc"}
+                       [:repl/kind])
              => {:repl/kind :cljs})
 
-    ; (testing "if `:prefer-clj` is used, will use clj on .clj and .cljc files"
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-clj
-    ;                     :editor/filename "somefile.clj"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :clj})
-    ;
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-clj
-    ;                     :editor/filename "somefile.cljc"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :clj})
-    ; 
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-clj
-    ;                     :editor/filename "somefile.cljs"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :cljs}))
-    ;
-    ; (testing "if `:prefer-cljs` is used, will use cljs on .cljs and .cljc files"
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-cljs
-    ;                     :editor/filename "somefile.clj"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :clj})
-    ;
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-cljs
-    ;                     :editor/filename "somefile.cljc"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :cljs})
-    ;
-    ;   (check (core/eql {:config/repl-kind :clj
-    ;                     :config/eval-as :prefer-cljs
-    ;                     :editor/filename "somefile.cljs"}
-    ;                    [:repl/kind])
-    ;          => {:repl/kind :cljs})
-      ,,,)))
+      (check (core/eql {:config/repl-kind :clj
+                        :config/eval-as :prefer-cljs
+                        :editor/filename "somefile.cljs"}
+                       [:repl/kind])
+             => {:repl/kind :cljs}))))
 
 (deftest ns-from-contents
   (async-test "gets the current namespace from file"

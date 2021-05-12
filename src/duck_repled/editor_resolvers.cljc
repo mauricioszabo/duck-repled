@@ -58,45 +58,80 @@
   (when-let [text (editor-helpers/text-in-range contents range)]
     {:editor/selection {:text/contents text :text/range range}}))
 
-(connect/defresolver default-namespaces [env {:keys [repl/kind]}]
-  {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
+; (connect/defresolver default-namespaces [env {:keys [repl/kind]}]
+;   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
+;
+; (connect/defresolver namespace-from-editor [inputs]
+;   {::pco/input [{:editor/ns [:text/contents]}]
+;    ::pco/output [:repl/namespace] ::pco/priority 1}
+;   {:repl/namespace (-> inputs :editor/ns :text/contents symbol)})
 
-(connect/defresolver namespace-from-editor [inputs]
-  {::pco/input [{:editor/ns [:text/contents]}]
-   ::pco/output [:repl/namespace] ::pco/priority 1}
-  {:repl/namespace (-> inputs :editor/ns :text/contents symbol)})
+(connect/defresolver resolver-for-ns [inputs]
+  {::pco/input [(pco/? {:editor/ns [:text/contents]})
+                (pco/? :repl/kind)]
+   ::pco/output [:repl/namespace]}
 
-(connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
-  {::pco/output [:repl/kind] ::pco/priority 2}
+  (let [contents (-> inputs :editor/ns :text/contents)
+        kind (:repl/kind inputs)]
+    (cond
+      contents {:repl/namespace (-> inputs :editor/ns :text/contents symbol)}
+      (nil? kind) nil
+      (= :cljs kind) {:repl/namespace 'cljs.user}
+      :not-cljs {:repl/namespace 'user})))
 
-  (prn :CHECKING-PRIORITY-2)
-  (when (not= :clj repl-kind)
-    {:repl/kind repl-kind}))
+; (connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
+;   {::pco/output [:repl/kind] ::pco/priority 2}
+;
+;   (when (not= :clj repl-kind)
+;     {:repl/kind repl-kind}))
+;
+; (connect/defresolver repl-kind-from-config [{:config/keys [eval-as]}]
+;   {::pco/output [:repl/kind] ::pco/priority 1}
+;
+;   (case eval-as
+;     :clj {:repl/kind :clj}
+;     :cljs {:repl/kind :cljs}
+;     nil))
+;     ; ::pco/unknown-value))
+;
+; (connect/defresolver repl-kind-from-config-and-file
+;   [{:keys [config/eval-as editor/filename]}]
+;   {::pco/output [:repl/kind]}
+;
+;   (prn :CHECKING-PRIORITY-0)
+;   (let [cljs-file? (str/ends-with? filename ".cljs")
+;         cljc-file? (or (str/ends-with? filename ".cljc")
+;                        (str/ends-with? filename ".cljx"))]
+;     (case eval-as
+;       :prefer-clj {:repl/kind (if cljs-file? :cljs :clj)}
+;       :prefer-cljs {:repl/kind (if (and (not cljs-file?) (not cljc-file?))
+;                                  :clj
+;                                  :cljs)}
+;       nil)))
 
-(connect/defresolver repl-kind-from-config [{:config/keys [eval-as]}]
-  {::pco/output [:repl/kind] ::pco/priority 1}
+(connect/defresolver resolve-repl-kind
+  [{:keys [config/repl-kind config/eval-as editor/filename]}]
+  {::pco/input [(pco/? :config/repl-kind) (pco/? :config/eval-as)
+                (pco/? :editor/filename)]
+   ::pco/output [:repl/kind]}
 
-  (prn :CHECKING-PRIORITY-1))
-  ; (case eval-as
-  ;   :clj {:repl/kind :clj}
-  ;   :cljs {:repl/kind :cljs}
-  ;   nil))
-    ; ::pco/unknown-value))
+  (cond
+    (and repl-kind (not= :clj repl-kind))
+    {:repl/kind repl-kind}
 
-(connect/defresolver repl-kind-from-config-and-file
-  [{:keys [config/eval-as editor/filename]}]
-  {::pco/output [:repl/kind]}
+    (#{:clj :cljs} eval-as)
+    {:repl/kind eval-as}
 
-  (prn :CHECKING-PRIORITY-0)
-  (let [cljs-file? (str/ends-with? filename ".cljs")
-        cljc-file? (or (str/ends-with? filename ".cljc")
-                       (str/ends-with? filename ".cljx"))]
-    (case eval-as
-      :prefer-clj {:repl/kind (if cljs-file? :cljs :clj)}
-      :prefer-cljs {:repl/kind (if (and (not cljs-file?) (not cljc-file?))
-                                 :clj
-                                 :cljs)}
-      nil)))
+    :else
+    (let [cljs-file? (str/ends-with? filename ".cljs")
+          cljc-file? (or (str/ends-with? filename ".cljc")
+                         (str/ends-with? filename ".cljx"))]
+      (case eval-as
+        :prefer-clj {:repl/kind (if cljs-file? :cljs :clj)}
+        :prefer-cljs {:repl/kind (if (and (not cljs-file?) (not cljc-file?))
+                                   :clj
+                                   :cljs)}
+        nil))))
 
 (connect/defresolver var-from-editor
   [{:editor/keys [contents range]}]
@@ -301,7 +336,10 @@
 ;
 
 (def resolvers [seed-data separate-data top-blocks
-                default-namespaces namespace-from-editor-data namespace-from-editor
+                namespace-from-editor-data
+                resolver-for-ns
+                ; default-namespaces namespace-from-editor
                 var-from-editor current-top-block current-block current-selection
 
-                repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file])
+                ; repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file
+                resolve-repl-kind])
