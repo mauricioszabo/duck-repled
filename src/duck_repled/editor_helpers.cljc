@@ -1,13 +1,22 @@
 (ns duck-repled.editor-helpers
   (:require [clojure.string :as str]
-            [cljs.reader :as edn]
-            [cljs.tools.reader :as reader]
+            ; [cljs.reader :as edn]
+            [clojure.tools.reader :as reader]
             [rewrite-clj.zip.move :as move]
             [rewrite-clj.zip :as zip]
             [rewrite-clj.zip.base :as zip-base]
             [rewrite-clj.node :as node]
             [clojure.tools.reader.reader-types :as r]
-            [rewrite-clj.parser :as parser]))
+            [rewrite-clj.parser :as parser]
+
+            #?(:cljs [rewrite-clj.node.uneval :refer [UnevalNode]])
+            #?(:cljs [rewrite-clj.node.reader-macro :refer [ReaderMacroNode DerefNode]])
+            #?(:cljs [rewrite-clj.node.fn :refer [FnNode]])
+            #?(:cljs [rewrite-clj.node.quote :refer [QuoteNode]]))
+  #?(:clj (:import [rewrite_clj.node.uneval UnevalNode]
+                   [rewrite_clj.node.reader_macro ReaderMacroNode DerefNode]
+                   [rewrite_clj.node.fn FnNode]
+                   [rewrite_clj.node.quote QuoteNode])))
 
 (defn- simple-read [str]
   (reader/read-string {:default (fn [_ res] res) :read-cond :allow} str))
@@ -19,11 +28,11 @@
         (cond
           (node/whitespace-or-comment? parsed) :whitespace
 
-          (instance? rewrite-clj.node.uneval/UnevalNode parsed)
+          (instance? UnevalNode parsed)
           (->> parsed :children (remove node/whitespace-or-comment?) first)
 
           :else parsed)))
-    (catch :default _
+    (catch #?(:clj Throwable :cljs :default) _
       (r/read-char reader)
       :whitespace)))
 
@@ -48,7 +57,9 @@ that the cursor is in row and col (0-based)"
                             (or (and (= erow row) (<= col ecol))
                                 (< erow row)))
         is-ns? #(and (list? %) (some-> % first (= 'ns)))
-        read (memoize #(try (simple-read %) (catch :default _ nil)))
+        read (memoize #(try
+                         (simple-read %)
+                         (catch #?(:clj Throwable :cljs :default) _ nil)))
         find-ns-for (fn [top-blocks] (->> top-blocks
                                           (map #(update % 1 read))
                                           (filter #(-> % peek is-ns?))
@@ -75,7 +86,7 @@ that the cursor is in row and col (0-based)"
   (let [reader (r/indexing-push-back-reader code)
         nodes (->> (repeatedly #(try
                                   (parser/parse reader)
-                                  (catch :default _
+                                  (catch #?(:clj Throwable :cljs :default) _
                                     (r/read-char reader)
                                     (node/whitespace-node " "))))
                    (take-while identity)
@@ -120,10 +131,10 @@ that the cursor is in row and col (0-based)"
 
 (defn- reader-tag? [node]
   (when node
-    (or (instance? rewrite-clj.node.reader-macro.ReaderMacroNode node)
-        (instance? rewrite-clj.node.fn/FnNode node)
-        (instance? rewrite-clj.node.quote.QuoteNode node)
-        (instance? rewrite-clj.node.reader-macro.DerefNode node))))
+    (or (instance? ReaderMacroNode node)
+        (instance? FnNode node)
+        (instance? QuoteNode node)
+        (instance? DerefNode node))))
 
 (defn- filter-forms [nodes]
   (when nodes
