@@ -21,7 +21,7 @@ jobs:
           paths:
             - /usr/local/bin/lein
             - ~/.m2
-            - **/**
+            - '**/**'
 
   test-cljs:
     <<: *defaults
