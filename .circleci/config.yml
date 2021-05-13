@@ -6,7 +6,7 @@ defaults: &defaults
     PATH=/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/local/openjdk-11:/usr/local/openjdk-11/bin
 
 jobs:
-  test-cljs:
+  deps:
     <<: *defaults
     steps:
       - checkout
@@ -16,6 +16,18 @@ jobs:
       - run:
           command: "clojure -Stree"
           when: always
+      - persist_to_workspace:
+          root: '.'
+          paths:
+            - /usr/local/bin/lein
+            - ~/.m2
+            - **/**
+
+  test-cljs:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: '.'
       - run:
           command: "lein shadow-release && node lib/main.js --test"
           when: always
@@ -23,13 +35,8 @@ jobs:
   test-clj:
     <<: *defaults
     steps:
-      - checkout
-      - run:
-          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
-          when: always
-      - run:
-          command: "clojure -Stree"
-          when: always
+      - attach_workspace:
+          at: '.'
       - run:
           command: "lein test"
           when: always
@@ -38,13 +45,23 @@ workflows:
   version: 2
   default-workflow:
     jobs:
+      - deps:
+          filters:
+            tags:
+              only:
+                - /^v.+/
+
       - test-cljs:
+          requires:
+            - deps
           filters:
             tags:
               only:
                 - /^v.+/
 
       - test-clj:
+          requires:
+            - deps
           filters:
             tags:
               only:
