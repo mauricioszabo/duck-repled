@@ -16,18 +16,19 @@ jobs:
       - run:
           command: "clojure -Stree"
           when: always
-      - persist_to_workspace:
-          root: '/'
+      - save_cache:
+          key: project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
           paths:
             - /usr/local/bin/lein
             - ~/.m2
-            - '~/project/**/**'
 
   test-cljs:
     <<: *defaults
     steps:
-      - attach_workspace:
-          at: '.'
+      - checkout
+      - restore_cache:
+          keys:
+            - project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
           command: "lein shadow-release && node lib/main.js --test"
           when: always
@@ -35,8 +36,10 @@ jobs:
   test-clj:
     <<: *defaults
     steps:
-      - attach_workspace:
-          at: '.'
+      - checkout
+      - restore_cache:
+          keys:
+            - project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
           command: "lein test"
           when: always
