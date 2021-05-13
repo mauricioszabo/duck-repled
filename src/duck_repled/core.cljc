@@ -24,6 +24,3 @@
   "I don't do a whole lot."
   [x]
   (println x "Hello, World!"))
-
-#_
-(eql/process (assoc env :bar {:foo 10}) [:foo])
