@@ -9,11 +9,11 @@ jobs:
     steps:
       - checkout
       - run:
-        command: docker build . -t tests
+          command: docker build . -t tests
       - run:
-        command: docker build . -t tests
+          command: docker build . -t tests
       - run:
-        command: docker save -o docker-image.img tests
+          command: docker save -o docker-image.img tests
       - persist_to_workspace:
           root: '.'
           paths:
