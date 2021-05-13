@@ -11,7 +11,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
+          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /home/circleci/.local/bin"
           when: always
       - run:
           command: "clojure -Stree"
@@ -19,7 +19,7 @@ jobs:
       - save_cache:
           key: project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
           paths:
-            - /usr/local/bin/lein
+            - /home/circleci/.local/bin/lein
             - ~/.m2
 
   test-cljs:
