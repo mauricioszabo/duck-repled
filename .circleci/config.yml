@@ -16,6 +16,10 @@ jobs:
       - run:
           command: "clojure -Stree"
           when: always
+      - persist_to_workspace:
+          root: '.'
+          paths:
+            - **/**
       - save_cache:
           key: cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
           paths:
@@ -25,7 +29,8 @@ jobs:
   test-cljs:
     <<: *defaults
     steps:
-      - checkout
+      - attach_workspace:
+          at: '.'
       - restore_cache:
           keys:
             - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
@@ -36,7 +41,8 @@ jobs:
   test-clj:
     <<: *defaults
     steps:
-      - checkout
+      - attach_workspace:
+          at: '.'
       - restore_cache:
           keys:
             - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
