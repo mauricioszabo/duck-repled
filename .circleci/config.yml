@@ -20,11 +20,28 @@ jobs:
           command: "lein shadow-release && node lib/main.js --test"
           when: always
 
+  test-clj:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
+          when: always
+      - run:
+          command: "lein test"
+          when: always
+
 workflows:
   version: 2
   default-workflow:
     jobs:
       - test-cljs:
+          filters:
+            tags:
+              only:
+                - /^v.+/
+
+      - test-clj:
           filters:
             tags:
               only:
