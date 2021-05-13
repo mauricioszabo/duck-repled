@@ -17,11 +17,11 @@ jobs:
           command: "clojure -Stree"
           when: always
       - persist_to_workspace:
-          root: '.'
+          root: '/'
           paths:
             - /usr/local/bin/lein
             - ~/.m2
-            - '**/**'
+            - '~/project/**/**'
 
   test-cljs:
     <<: *defaults
