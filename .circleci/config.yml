@@ -1,9 +1,7 @@
 version: 2.1
 defaults: &defaults
-  docker:
-    - image: circleci/clojure:openjdk-11-tools-deps-node
-  environment:
-    PATH=/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/local/openjdk-11:/usr/local/openjdk-11/bin
+  machine:
+    image: circleci/classic:edge
 
 jobs:
   deps:
@@ -11,43 +9,35 @@ jobs:
     steps:
       - checkout
       - run:
-          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && mkdir -p /home/circleci/.local/bin && mv lein /home/circleci/.local/bin"
-          when: always
+        - command docker build . -t tests
       - run:
-          command: "clojure -Stree"
-          when: always
+        - command docker build . -t tests
+      - run:
+        - docker save -o docker-image.img tests
       - persist_to_workspace:
           root: '.'
           paths:
-            - '**/**'
-      - save_cache:
-          key: cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
-          paths:
-            - /home/circleci/.local/bin/lein
-            - ~/.m2
+            - ./docker-image.img
 
   test-cljs:
     <<: *defaults
     steps:
       - attach_workspace:
           at: '.'
-      - restore_cache:
-          keys:
-            - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
-          command: "lein shadow-release && node lib/main.js --test"
-          when: always
+          command: docker load -i docker-image.img
+      - run:
+          command: "docker run -it tests node lib/main.js --test"
 
   test-clj:
     <<: *defaults
     steps:
       - attach_workspace:
           at: '.'
-      - restore_cache:
-          keys:
-            - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
-          command: "lein test"
+          command: docker load -i docker-image.img
+      - run:
+          command: "docker run -it tests lein test"
           when: always
 
 workflows:
