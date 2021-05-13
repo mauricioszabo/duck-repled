@@ -18,7 +18,7 @@
           (try
             {:result (sci/eval-string cmd {:env env})
              :options options}
-            (catch :default e
+            (catch #?(:clj Throwable :cljs :default) e
               {:error e})))))))
 
 (deftest repl-definition
@@ -74,5 +74,6 @@
                      :editor/block {:repl/result {:result 15}}
                      :editor/top-block {:repl/result {:result -8}}}))))))
 
-(defn- ^:dev/after-load run []
-  (run-tests))
+#?(:cljs
+   (defn- ^:dev/after-load run []
+     (run-tests)))

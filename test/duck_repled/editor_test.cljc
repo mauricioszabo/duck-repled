@@ -142,5 +142,7 @@
                          [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))
 
-(defn- ^:dev/after-load run []
-  (run-tests))
+
+#?(:cljs
+   (defn- ^:dev/after-load run []
+     (run-tests)))
