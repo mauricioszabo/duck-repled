@@ -1,12 +1,16 @@
-FROM circleci/clojure:openjdk-11-tools-deps-node
+FROM openjdk:alpine
 
 USER root
 WORKDIR /work
 COPY . .
-ENV PATH=/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/local/openjdk-11:/usr/local/openjdk-11/bin
+RUN apk add --no-cache curl npm bash git
 RUN wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
 RUN chmod +x lein
 RUN mv lein /usr/local/bin
+
+RUN curl -O https://download.clojure.org/install/linux-install-1.10.3.839.sh
+RUN chmod +x linux-install-1.10.3.839.sh
+RUN ./linux-install-1.10.3.839.sh
 
 RUN clojure -Stree
 RUN lein deps
