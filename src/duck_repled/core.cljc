@@ -13,7 +13,6 @@
                        indexes/register
                        (plugin/register (plugins/attribute-errors-plugin))))
 
-(def ^:private env-keys [:editor/data :repl/evaluators])
 (defn eql
   ([query]
    (eql/process env query))

@@ -2,5 +2,5 @@
  {org.clojure/clojure {:mvn/version "1.10.1"}
   org.clojure/clojurescript {:mvn/version "1.10.844"}
   com.wsscode/pathom3 {:git/url "https://github.com/wilkerlucio/pathom3"
-                       :sha "8688003b1a70b9a1b55954d7e552a4779d0127c1"}
+                       :sha "7e61113f1818e63d9528e61344a79bca20db969c"}
   rewrite-clj {:mvn/version "1.0.605-alpha"}}}
