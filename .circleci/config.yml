@@ -1,30 +1,66 @@
 version: 2.1
 defaults: &defaults
-  docker:
-    - image: circleci/clojure:openjdk-11-tools-deps-node
-  environment:
-    PATH=/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/local/openjdk-11:/usr/local/openjdk-11/bin
+  machine:
+    image: circleci/classic:edge
 
 jobs:
-  test-cljs:
+  deps:
     <<: *defaults
     steps:
       - checkout
       - run:
-          command: "wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && chmod +x lein && sudo mv lein /usr/local/bin"
-          when: always
+          command: docker build . -t tests
       - run:
-          command: "clojure -Stree"
-          when: always
+          command: docker build . -t tests
       - run:
-          command: "lein shadow-release && node lib/main.js --test"
+          command: docker save -o docker-image.img tests
+      - persist_to_workspace:
+          root: '.'
+          paths:
+            - ./docker-image.img
+
+  test-cljs:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: '.'
+      - run:
+          command: docker load -i docker-image.img
+      - run:
+          command: "docker run -it tests node lib/main.js --test"
+
+  test-clj:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: '.'
+      - run:
+          command: docker load -i docker-image.img
+      - run:
+          command: "docker run -it tests lein test"
           when: always
 
 workflows:
   version: 2
   default-workflow:
     jobs:
+      - deps:
+          filters:
+            tags:
+              only:
+                - /^v.+/
+
       - test-cljs:
+          requires:
+            - deps
+          filters:
+            tags:
+              only:
+                - /^v.+/
+
+      - test-clj:
+          requires:
+            - deps
           filters:
             tags:
               only:
