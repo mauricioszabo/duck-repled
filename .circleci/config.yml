@@ -17,7 +17,7 @@ jobs:
           command: "clojure -Stree"
           when: always
       - save_cache:
-          key: project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
+          key: cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
           paths:
             - /home/circleci/.local/bin/lein
             - ~/.m2
@@ -28,7 +28,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
+            - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
           command: "lein shadow-release && node lib/main.js --test"
           when: always
@@ -39,7 +39,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - project-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
+            - cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
       - run:
           command: "lein test"
           when: always
