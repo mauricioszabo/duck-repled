@@ -19,7 +19,7 @@ jobs:
       - persist_to_workspace:
           root: '.'
           paths:
-            - **/**
+            - '**/**'
       - save_cache:
           key: cache-{{checksum "project.clj"}}-{{checksum "deps.edn"}}
           paths:
