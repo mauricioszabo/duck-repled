@@ -5,26 +5,29 @@
             [duck-repled.repl-protocol :as repl]
             [promesa.core :as p]))
 
-(pco/defresolver repl-eval [{:repl/keys [evaluator code namespace]}]
-  {::pco/output [:repl/result :repl/error]}
+(connect/defresolver get-right-repl [{:repl/keys [kind evaluators]}]
+  {::pco/output [:repl/evaluator :repl/cljs]}
 
-  (p/let [result (repl/eval evaluator code {:namespace namespace})]
+  (let [{:keys [clj cljs]} evaluators]
+    (cond
+      (not= kind :cljs) {:repl/evaluator clj}
+      (nil? clj) {:repl/evaluator cljs}
+      :embedded-cljs {:repl/clj clj
+                      :repl/evaluator cljs})))
+
+(connect/defresolver repl-eval [{:repl/keys [evaluator namespace]
+                                 :text/keys [contents range]}]
+  {::pco/input [:repl/evaluator :text/contents
+                (pco/? :repl/namespace) (pco/? :text/range)]
+   ::pco/output [:repl/result :repl/error]}
+
+  (p/let [opts (cond-> {}
+                       namespace (assoc :namespace namespace)
+                       range (assoc :row (-> range first first)
+                                    :col (-> range first second)))
+          result (repl/eval evaluator contents opts)]
     (if (:error result)
       {:repl/error result}
       {:repl/result result})))
 
-(def resolvers [repl-eval])
-
-; (defonce plan-cache* (atom {}))
-;
-
-;
-; (s/defn eql :- js/Promise
-;   "Queries the Pathom graph for the REPLs"
-;   [params :- {(s/optional-key :editor-state) schemas/EditorState
-;               (s/optional-key :callbacks)    s/Any}
-;    query]
-;   (let [params (cond-> params
-;                  (-> params :callbacks nil?)
-;                  (assoc :callbacks (-> params :editor-state deref :editor/callbacks)))]
-;     (p.a.eql/process (merge env params) query)))
+(def resolvers [get-right-repl repl-eval])

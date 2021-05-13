@@ -13,32 +13,42 @@
                             [:range range]])
 (def ^:private range-and-content [:cat [:schema range] string?])
 (def ^:private top-blocks [:vector range-and-content])
-
+(def ^:private contents [:map
+                         [:text/contents string?]
+                         [:text/range range]
+                         [:repl/evaluator {:optional true} any?]])
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/contents (m/schema string?)
    :editor/filename (m/schema string?)
    :editor/range (m/schema range)
-   :editor/ns-range (m/schema range)
    :editor/namespace (m/schema string?)
    :editor/top-blocks (m/schema top-blocks)
-   :editor/current-var (m/schema string?)
-   :editor/current-var-range (m/schema range)
+
+   :editor/current-var (m/schema contents)
+   :editor/ns (m/schema contents)
+   :editor/top-block (m/schema contents)
+   :editor/block (m/schema contents)
+   :editor/selection (m/schema contents)
+   ; :editor/current-var-range (m/schema range)
+
+   :text/contents (m/schema string?)
+   :text/range (m/schema range)
 
    :config/repl-kind (m/schema keyword?)
    :config/eval-as (m/schema [:enum :clj :cljs :prefer-clj :prefer-cljs])
 
    :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
+   :repl/evaluators (m/schema [:map [:clj any?] [:cljs any?]])
    :repl/evaluator (m/schema any?)
+   :repl/clj (m/schema any?)
    :repl/code (m/schema string?)
    :repl/result (m/schema [:map [:result any?]])
    :repl/error (m/schema [:map [:error any?]])
 
    :map (:map (m/base-schemas))})
 
-#_
-(m/validate [:fn])
 #_
 (validate! [:config/eval-as]
            {:config/eval-as :clja})
