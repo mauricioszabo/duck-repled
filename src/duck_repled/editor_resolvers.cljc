@@ -24,9 +24,8 @@
 
 (connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]
                                                   :as inputs}]
-  {::pco/input [:editor/top-blocks :editor/range
-                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
-   ::pco/output [{:editor/ns [:text/contents :text/range :repl/evaluator]}]}
+  {::pco/input [:editor/top-blocks :editor/range]
+   ::pco/output [{:editor/ns [:text/contents :text/range]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
     {:editor/ns {:text/contents (str ns) :text/range range}}))
@@ -160,36 +159,6 @@
 ;     :cljs {:cljs/required? true}
 ;     nil))
 ;
-; (pco/defresolver need-cljs [{:editor/keys [config filename]}]
-;   {::pco/output [:cljs/required?]}
-;
-;   (let [cljs-file? (str/ends-with? filename ".cljs")
-;         cljc-file? (or (str/ends-with? filename ".cljc")
-;                        (str/ends-with? filename ".cljx"))]
-;     (cond
-;       (-> config :eval-mode (= :prefer-clj))
-;       (cond
-;         cljc-file? {:cljs/required? false}
-;         cljs-file? {:cljs/required? true}
-;         :else {:cljs/required? false})
-;
-;       (-> config :eval-mode (= :prefer-cljs))
-;       {:cljs/required? (or cljs-file? cljc-file?)})))
-;
-; (pco/defresolver repls-for-evaluation
-;   [{:keys [editor-state]} {:keys [cljs/required?]}]
-;   {::pco/output [:repl/eval :repl/aux :repl/clj]}
-;
-;   (when-let [clj-aux (some-> editor-state deref :clj/aux)]
-;     (if required?
-;       (when-let [cljs (:cljs/repl @editor-state)]
-;         {:repl/eval cljs
-;          :repl/aux  cljs
-;          :repl/clj  clj-aux})
-;       {:repl/eval (:clj/repl @editor-state)
-;        :repl/aux  clj-aux
-;        :repl/clj  clj-aux})))
-;
 ; (pco/defresolver all-vars-in-ns
 ;   [_ {:repl/keys [namespace aux]}]
 ;   {::pco/output [{:namespace/vars [:var/fqn]}]}
@@ -198,57 +167,12 @@
 ;     {:namespace/vars (map (fn [v] {:var/fqn (symbol namespace v)})
 ;                        (keys result))}))
 ;
-; (pco/defresolver fqn-var
-;   [{:keys [repl/namespace editor/current-var repl/aux]}]
-;   {::pco/output [:var/fqn]}
-;
-;   (p/let [{:keys [result]} (eval/eval aux (str "`" current-var)
-;                              {:namespace (str namespace)
-;                               :ignore    true})]
-;     {:var/fqn result}))
-;
 ; (pco/defresolver cljs-env [{:keys [editor-state]} {:keys [repl/clj]}]
 ;   {::pco/output [:cljs/env]}
 ;
 ;   (when-let [cmd (-> @editor-state :repl/info :cljs/repl-env)]
 ;     (p/let [{:keys [result]} (eval/eval clj (str cmd))]
 ;       {:cljs/env result})))
-;
-; (pco/defresolver get-config [{:keys [callbacks]} _]
-;   {::pco/output [:editor/config]}
-;
-;   (p/let [cfg ((:get-config callbacks))]
-;     {:editor/config cfg}))
-;
-; (pco/defresolver meta-for-var
-;   [env {:keys [var/fqn cljs/required? repl/aux repl/clj]}]
-;   {::pco/output [:var/meta]}
-;
-;   (p/let [keys (-> (pco/params env) :keys)
-;           res  (-> aux
-;                    (eval/eval (str "(clojure.core/meta #'" fqn ")"))
-;                    (p/catch (constantly nil)))
-;           res  (if (and required? (-> res :result nil?))
-;                  (eval/eval clj (str "(clojure.core/meta #'" fqn ")"))
-;                  res)]
-;     {:var/meta (cond-> (:result res)
-;                  (coll? keys) (select-keys keys))}))
-;
-; (pco/defresolver spec-for-var
-;   [{:keys [var/fqn repl/aux]}]
-;   {::pco/output [:var/spec]}
-;
-;   (p/let [{:keys [result]}
-;           (eval/eval
-;             aux
-;             (str "(clojure.core/let [s (clojure.spec.alpha/get-spec '" fqn ")"
-;               "                   fun #(clojure.core/some->> (% s) clojure.spec.alpha/describe)]"
-;               " (clojure.core/when s"
-;               "   (clojure.core/->> [:args :ret :fn]"
-;               "      (clojure.core/map (clojure.core/juxt clojure.core/identity fun))"
-;               "      (clojure.core/filter clojure.core/second)"
-;               "      (clojure.core/into {}))))"))]
-;     (when result {:var/spec result})))
 ;
 ; (def ^:private kondo-cache (atom {:cache nil :when 0}))
 ;
