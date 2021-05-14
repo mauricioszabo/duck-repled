@@ -52,7 +52,7 @@
 
 (connect/defresolver meta-for-var
   [{:keys [repl/namespace editor/current-var repl/evaluator]}]
-  {::pco/output [:var/meta]}
+  {::pco/output [:var/meta] ::pco/priority 1}
   (eval-for-meta evaluator current-var namespace))
 
 (connect/defresolver meta-for-clj-var
@@ -62,20 +62,23 @@
   (when (= :cljs kind)
     (eval-for-meta clj current-var namespace)))
 
-; (pco/defresolver meta-for-var
-;   [env {:keys [var/fqn cljs/required? repl/aux repl/clj]}]
-;   {::pco/output [:var/meta]}
-;
-;   (p/let [keys (-> (pco/params env) :keys)
-;           res  (-> aux
-;                    (eval/eval (str "(clojure.core/meta #'" fqn ")"))
-;                    (p/catch (constantly nil)))
-;           res  (if (and required? (-> res :result nil?))
-;                  (eval/eval clj (str "(clojure.core/meta #'" fqn ")"))
-;                  res)]
-;     {:var/meta (cond-> (:result res)
-;                  (coll? keys) (select-keys keys))}))
-;
+#_
+(pco/defresolver spec-for-var
+  [{:keys [var/fqn repl/aux]}]
+  {::pco/output [:var/spec]}
+
+  (p/let [{:keys [result]}
+          (eval/eval
+            aux
+            (str "(clojure.core/let [s (clojure.spec.alpha/get-spec '" fqn ")"
+              "                   fun #(clojure.core/some->> (% s) clojure.spec.alpha/describe)]"
+              " (clojure.core/when s"
+              "   (clojure.core/->> [:args :ret :fn]"
+              "      (clojure.core/map (clojure.core/juxt clojure.core/identity fun))"
+              "      (clojure.core/filter clojure.core/second)"
+              "      (clojure.core/into {}))))"))]
+    (when result {:var/spec result})))
+
 
 (def resolvers [get-right-repl repl-eval fqn-var
                 meta-for-var meta-for-clj-var])
