@@ -3,6 +3,7 @@
             [duck-repled.connect :as connect]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
+            [duck-repled.template :refer [template]]
             [promesa.core :as p]))
 
 (connect/defresolver get-right-repl [{:repl/keys [kind evaluators]}]
@@ -30,4 +31,51 @@
       {:repl/error result}
       {:repl/result result})))
 
-(def resolvers [get-right-repl repl-eval])
+(connect/defresolver fqn-var
+  [{:keys [repl/namespace editor/current-var repl/evaluator]}]
+  {::pco/output [:var/fqn]}
+
+  (p/let [{:keys [result]} (repl/eval evaluator
+                                      (str "`" (:text/contents current-var))
+                                      {:namespace (str namespace)})]
+    {:var/fqn result}))
+
+(defn- eval-for-meta [evaluator current-var namespace]
+  (p/let [{:keys [result]} (repl/eval evaluator
+                                      (template `(meta ::current-var)
+                                                {::current-var (->> current-var
+                                                                    :text/contents
+                                                                    (str "#'")
+                                                                    symbol)})
+                                      {:namespace (str namespace)})]
+    (when result {:var/meta result})))
+
+(connect/defresolver meta-for-var
+  [{:keys [repl/namespace editor/current-var repl/evaluator]}]
+  {::pco/output [:var/meta]}
+  (eval-for-meta evaluator current-var namespace))
+
+(connect/defresolver meta-for-clj-var
+  [{:keys [repl/namespace editor/current-var repl/clj repl/kind]}]
+  {::pco/output [:var/meta]}
+
+  (when (= :cljs kind)
+    (eval-for-meta clj current-var namespace)))
+
+; (pco/defresolver meta-for-var
+;   [env {:keys [var/fqn cljs/required? repl/aux repl/clj]}]
+;   {::pco/output [:var/meta]}
+;
+;   (p/let [keys (-> (pco/params env) :keys)
+;           res  (-> aux
+;                    (eval/eval (str "(clojure.core/meta #'" fqn ")"))
+;                    (p/catch (constantly nil)))
+;           res  (if (and required? (-> res :result nil?))
+;                  (eval/eval clj (str "(clojure.core/meta #'" fqn ")"))
+;                  res)]
+;     {:var/meta (cond-> (:result res)
+;                  (coll? keys) (select-keys keys))}))
+;
+
+(def resolvers [get-right-repl repl-eval fqn-var
+                meta-for-var meta-for-clj-var])
