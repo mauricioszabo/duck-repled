@@ -24,9 +24,8 @@
 
 (connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]
                                                   :as inputs}]
-  {::pco/input [:editor/top-blocks :editor/range
-                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
-   ::pco/output [{:editor/ns [:text/contents :text/range :repl/evaluator]}]}
+  {::pco/input [:editor/top-blocks :editor/range]
+   ::pco/output [{:editor/ns [:text/contents :text/range]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
     {:editor/ns {:text/contents (str ns) :text/range range}}))
