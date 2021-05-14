@@ -62,23 +62,38 @@
   (when (= :cljs kind)
     (eval-for-meta clj current-var namespace)))
 
-#_
-(pco/defresolver spec-for-var
-  [{:keys [var/fqn repl/aux]}]
+; TODO: Somehow, test this
+(pco/defresolver spec-for-var [{:keys [var/fqn repl/evaluator]}]
   {::pco/output [:var/spec]}
 
   (p/let [{:keys [result]}
-          (eval/eval
-            aux
-            (str "(clojure.core/let [s (clojure.spec.alpha/get-spec '" fqn ")"
-              "                   fun #(clojure.core/some->> (% s) clojure.spec.alpha/describe)]"
-              " (clojure.core/when s"
-              "   (clojure.core/->> [:args :ret :fn]"
-              "      (clojure.core/map (clojure.core/juxt clojure.core/identity fun))"
-              "      (clojure.core/filter clojure.core/second)"
-              "      (clojure.core/into {}))))"))]
+          (repl/eval
+            evaluator
+            (template `(let [s# (clojure.spec.alpha/get-spec ' ::fqn)
+                             fun# #(some->> (% s) clojure.spec.alpha/describe)]
+                         (when s#
+                           (->> [:args :ret :fn]
+                                (map (juxt identity fun#))
+                                (filter second)
+                                (into {}))))
+                      {::fqn fqn}))]
     (when result {:var/spec result})))
 
+(pco/defresolver doc-for-var [{:var/keys [fqn meta spec]}]
+  {::pco/input [:var/fqn :var/meta (pco/? :var/spec)]
+   ::pco/output [:var/doc]}
+
+  {:var/doc
+   (str "-------------------------\n"
+        fqn "\n"
+        (:arglists meta) "\n  "
+        (:doc meta)
+        (when (map? spec)
+          (cond-> "\nSpec\n"
+                  (:args spec) (str "  args: " (pr-str (:args spec)) "\n")
+                  (:ret spec) (str "  ret: " (pr-str (:ret spec)) "\n")
+                  (:fn spec) (str "  fn: " (pr-str (:fn spec))))))})
 
 (def resolvers [get-right-repl repl-eval fqn-var
-                meta-for-var meta-for-clj-var])
+                meta-for-var meta-for-clj-var
+                spec-for-var doc-for-var])

@@ -102,7 +102,17 @@
                              (assoc :repl/kind :cljs :config/repl-kind :clj)
                              (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
                          [:var/meta])
-               => {:var/meta {:doc "Another doc"}})))))
+               => {:var/meta {:doc "Another doc"}}))
+
+      (testing "will get DOC for that current var"
+        (check (core/eql (-> seed
+                             (assoc :repl/kind :cljs :config/repl-kind :clj)
+                             (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
+                         [:var/doc])
+               => {:var/doc (str "-------------------------\n"
+                                 "foo/my-clj-fun\n"
+                                 "([])\n"
+                                 "  Another doc")})))))
 
 #?(:cljs
    (defn- ^:dev/after-load run []
