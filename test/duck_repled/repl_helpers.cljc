@@ -9,9 +9,13 @@
   (let [full (:buffer (swap! pending update :buffer str data))
         [_ id result] (re-find #"(?s)__eval_result_beg (.*?) (.*?) __eval_result_end" full)]
     (when result
-      (let [promise (get @pending id)]
+      (let [{:keys [promise opts]} (get @pending id)
+            result (try
+                      (edn/read-string {:default tagged-literal} result)
+                      (catch #?(:cljs :default :clj Throwable) _
+                        {:result result}))]
         (swap! pending dissoc :buffer id)
-        (p/resolve! promise (edn/read-string {:default tagged-literal} result))))))
+        (p/resolve! promise (merge result opts))))))
 
 (defn- connect! [host port]
   #?(:cljs
@@ -37,7 +41,7 @@
     (.write conn (str "(in-ns '" namespace ")\n")))
   (let [id (gensym "repl-eval-")
         promise (p/deferred)]
-    (swap! pending assoc (str id) promise)
+    (swap! pending assoc (str id) {:promise promise :opts options})
     (.write conn (str "['__eval_result_beg"
                       " '" id
                       " (try {:result " command
@@ -73,5 +77,5 @@
 (def ^:dynamic *global-evaluator*
   (connect-sci!))
 
-(def ^:dynamic *cljs-evaluator* 
+(def ^:dynamic *cljs-evaluator*
   (connect-sci!))
