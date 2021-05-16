@@ -2,34 +2,21 @@
   (:require [check.async :refer [check testing async-test]]
             [clojure.test :refer [deftest run-tests]]
             [duck-repled.core :as core]
-            [sci.core :as sci]
+            [promesa.core :as p]
+            [duck-repled.repl-helpers :as helpers]
             [duck-repled.repl-protocol :as repl]))
 
-(defn- prepare-sci []
-  (let [env (atom {})]
-    (sci/eval-string (str "(ns foo (:require [clojure.string :as str]))\n"
-                          "(defn my-fun \"My doc\" [] (+ 1 2))\n"
-                          "(def some-var 10)\n")
-                     {:env env})
-    (reify repl/Evaluator
-      (-evaluate [_ command options]
-        (let [cmd (if-let [ns (:namespace options)]
-                    (str "(in-ns '" ns ") " command "\n")
-                    (str "" command "\n"))]
-          (try
-            {:result (sci/eval-string cmd {:env env})
-             :options options}
-            (catch #?(:clj Throwable :cljs :default) e
-              {:error e})))))))
+(defn- prepare-repl []
+  (helpers/prepare-repl (helpers/connect-sci!)))
 
 (deftest repl-definition
-  (async-test "will run on CLJ or CLJS REPL depending on what's expected"
-    (let [clj-ish (prepare-sci)
-          cljs-ish (prepare-sci)
+  (p/let [clj-ish (prepare-repl)
+          cljs-ish (prepare-repl)
           seed {:repl/evaluators {:cljs cljs-ish :clj clj-ish}
                 :editor/data {:contents "(ns foo)\nflavor"
                               :range [[1 0] [1 0]]}
                 :config/eval-as :prefer-clj}]
+    (async-test "will run on CLJ or CLJS REPL depending on what's expected"
       (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
       (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"})
 
@@ -45,7 +32,7 @@
 
 (deftest eval-commands
   (async-test "given that you have a REPL, you can eval commands"
-    (let [sci (prepare-sci)]
+    (p/let [sci (prepare-repl)]
       (testing "evaluates command"
         (check (core/eql {:repl/evaluator sci :text/contents "(+ 1 2)"}
                          [:repl/result])
@@ -62,10 +49,9 @@
                => {:repl/result {:result 10 :options {:row 2 :col 4}}}))
 
       (testing "evaluates fragments of editor in REPL"
-        (promesa.core/let [sci (prepare-sci)
-                           editor {:filename "foo.clj"
-                                   :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 some-var))"
-                                   :range [[3 7] [3 8]]}]
+        (p/let [editor {:filename "foo.clj"
+                        :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 some-var))"
+                        :range [[3 7] [3 8]]}]
           (check (core/eql {:editor/data editor :repl/evaluator sci}
                            [{:editor/selection [:repl/result]}
                             {:editor/block [:repl/result]}
@@ -75,15 +61,14 @@
                      :editor/top-block {:repl/result {:result -8}}}))))))
 
 (deftest getting-infos-about-vars
-  (async-test "will get full qualified names"
-    (let [evaluator (prepare-sci)
-          cljs (prepare-sci)
+  (p/let [evaluator (prepare-repl)
+          cljs (prepare-repl)
           seed {:repl/evaluators {:clj evaluator :cljs cljs}
                 :editor/data {:contents "(ns foo)\nmy-fun"
                               :filename "file.clj"
                               :range [[1 0] [1 0]]}
                 :config/eval-as :prefer-clj}]
-
+    (async-test "will get full qualified names"
       (repl/eval evaluator "(defn my-clj-fun \"Another doc\" [] (+ 1 2))\n" {:namespace "foo"})
       (testing "will get full qualified name of var"
         (check (core/eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))

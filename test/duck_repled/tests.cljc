@@ -1,7 +1,8 @@
 (ns duck-repled.tests
   (:require [duck-repled.editor-test]
             [duck-repled.repl-test]
-            [clojure.test :as test]))
+            [clojure.test :as test]
+            [duck-repled.repl-helpers]))
 
 (defn main [ & args]
   #?(:cljs
