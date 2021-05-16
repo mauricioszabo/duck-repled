@@ -2,11 +2,14 @@
   (:require [duck-repled.editor-test]
             [duck-repled.repl-test]
             [clojure.test :as test]
-            [duck-repled.repl-helpers]))
+            [duck-repled.repl-helpers :as helpers]))
 
 (defn main [ & args]
   #?(:cljs
-     (when (= args ["--test"])
+     (when (-> args second (= "clj"))
+       (.then (helpers/connect-socket! "localhost" 32883)
+              #(set! helpers/*global-evaluator* %)))
+     (when (-> args first (= "--test"))
        (defmethod test/report [::test/default :summary] [{:keys [fail error]}]
          (if (= 0 fail error)
            (js/process.exit 0)

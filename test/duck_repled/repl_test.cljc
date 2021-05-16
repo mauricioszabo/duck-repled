@@ -7,11 +7,14 @@
             [duck-repled.repl-protocol :as repl]))
 
 (defn- prepare-repl []
-  (helpers/prepare-repl (helpers/connect-sci!)))
+  (helpers/prepare-repl helpers/*global-evaluator*))
+
+(defn- prepare-cljs-repl []
+  (helpers/prepare-repl helpers/*cljs-evaluator*))
 
 (deftest repl-definition
   (p/let [clj-ish (prepare-repl)
-          cljs-ish (prepare-repl)
+          cljs-ish (prepare-cljs-repl)
           seed {:repl/evaluators {:cljs cljs-ish :clj clj-ish}
                 :editor/data {:contents "(ns foo)\nflavor"
                               :range [[1 0] [1 0]]}

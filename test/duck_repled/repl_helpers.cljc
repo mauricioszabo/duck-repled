@@ -69,3 +69,9 @@
         (repl/eval (str "(ns foo (:require [clojure.string :as str]))\n"
                         "(defn my-fun \"My doc\" [] (+ 1 2))\n"
                         "(def some-var 10)\n"))))
+
+(def ^:dynamic *global-evaluator*
+  (connect-sci!))
+
+(def ^:dynamic *cljs-evaluator* 
+  (connect-sci!))
