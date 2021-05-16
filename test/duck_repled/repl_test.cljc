@@ -34,8 +34,8 @@
                => {:editor/current-var {:repl/result {:result :cljs}}})))))
 
 (deftest eval-commands
-  (async-test "given that you have a REPL, you can eval commands"
-    (p/let [sci (prepare-repl)]
+  (p/let [sci (prepare-repl)]
+    (async-test "given that you have a REPL, you can eval commands" {:timeout 8000}
       (testing "evaluates command"
         (check (core/eql {:repl/evaluator sci :text/contents "(+ 1 2)"}
                          [:repl/result])
