@@ -41,3 +41,5 @@
                                                            ~op
                                                            " outputing "
                                                            ~outputs)))))))))))
+
+; (shadow.cljs.devtools.api/compiler-env :tests)
