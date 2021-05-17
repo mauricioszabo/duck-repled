@@ -18,7 +18,8 @@
         (p/resolve! promise (merge result opts))))))
 
 (defn- connect! [host port]
-  #?(:cljs
+  #?(:clj nil
+     :cljs
      (js/Promise.
       (fn [resolve fail]
         (let [pending (atom {})
@@ -36,7 +37,7 @@
    " :cljr System.Exception"
    " :clje _)"))
 
-(defn- eval! [^js conn pending command options]
+(defn- eval! [conn pending command options]
   (when-let [namespace (:namespace options)]
     (.write conn (str "(in-ns '" namespace ")\n")))
   (let [id (gensym "repl-eval-")

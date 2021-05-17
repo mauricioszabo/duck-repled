@@ -7,7 +7,9 @@
 
 (defn main [ & args]
   (when (-> args first (= "--test"))
-    (defmethod test/report [::test/default :summary] [{:keys [fail error] :as result}]
+    (defmethod test/report [::test/default :summary] [{:keys [test pass fail error]}]
+      (println "Ran" test "tests containing" (+ pass fail error) "assertions.")
+      (println fail "failures," error "errors.")
       (if (= 0 fail error)
         (js/process.exit 0)
         (js/process.exit 1)))
