@@ -16,17 +16,23 @@
       :embedded-cljs {:repl/clj clj
                       :repl/evaluator cljs})))
 
-(connect/defresolver repl-eval [{:repl/keys [evaluator namespace]
-                                 :text/keys [contents range]}]
+(connect/defresolver repl-eval [env {:repl/keys [evaluator namespace]
+                                     :text/keys [contents range]
+                                     :editor/keys [filename]}]
   {::pco/input [:repl/evaluator :text/contents
-                (pco/? :repl/namespace) (pco/? :text/range)]
+                (pco/? :editor/filename) (pco/? :repl/namespace) (pco/? :text/range)]
    ::pco/output [:repl/result :repl/error]}
 
-  (p/let [opts (cond-> {}
+  (p/let [params (pco/params env)
+          opts (cond-> (dissoc params :repl/template)
                        namespace (assoc :namespace namespace)
-                       range (assoc :row (-> range first first)
-                                    :col (-> range first second)))
-          result (repl/eval evaluator contents opts)]
+                       filename (assoc :filename filename)
+                       range (-> (update :row #(or % (-> range first first)))
+                                 (update :col #(or % (-> range first second)))))
+          code (if-let [t (:repl/template params)]
+                 (template t {:repl/code (symbol contents)})
+                 contents)
+          result (repl/eval evaluator code opts)]
     (if (:error result)
       {:repl/error result}
       {:repl/result result})))

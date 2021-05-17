@@ -21,17 +21,19 @@
                 :config/eval-as :prefer-clj}]
     (async-test "will run on CLJ or CLJS REPL depending on what's expected"
       (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
-      (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"})
+      (when cljs-ish
+        (repl/eval cljs-ish "(def flavor :cljs)" {:namespace "foo"}))
 
       (testing "will use Clojure REPL"
         (check (core/eql (assoc-in seed [:editor/data :filename] "file.clj")
                          [{:editor/current-var [:repl/result]}])
                => {:editor/current-var {:repl/result {:result :clj}}}))
 
-      (testing "will use ClojureScript REPL"
-        (check (core/eql (assoc-in seed [:editor/data :filename] "file.cljs")
-                         [{:editor/current-var [:repl/result]}])
-               => {:editor/current-var {:repl/result {:result :cljs}}})))))
+      (when cljs-ish
+        (testing "will use ClojureScript REPL"
+          (check (core/eql (assoc-in seed [:editor/data :filename] "file.cljs")
+                           [{:editor/current-var [:repl/result]}])
+                 => {:editor/current-var {:repl/result {:result :cljs}}}))))))
 
 (deftest eval-commands
   (p/let [sci (prepare-repl)]
@@ -47,9 +49,19 @@
 
       (testing "sends ROW/COL and NS if available"
         (check (core/eql {:repl/evaluator sci :repl/namespace 'foo
+                          :editor/filename "file.clj"
                           :text/contents "some-var" :text/range [[2 4] [4 5]]}
                          [:repl/result])
-               => {:repl/result {:result 10 :options {:row 2 :col 4}}}))
+               => {:repl/result {:result 10 :options {:row 2
+                                                      :col 4
+                                                      :filename "file.clj"}}}))
+
+      (testing "applies template/options to code and evaluate"
+        (check (core/eql {:repl/evaluator sci :text/contents "(+ 1 2)"}
+                         ['(:repl/result {:repl/template (inc :repl/code)
+                                          :row 20})])
+               => {:repl/result {:result 4
+                                 :options {:row 20}}}))
 
       (testing "evaluates fragments of editor in REPL"
         (p/let [editor {:filename "foo.clj"
