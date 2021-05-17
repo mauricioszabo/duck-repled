@@ -18,7 +18,7 @@
     (p/let [repl (helpers/connect-socket! "localhost"
                                           (-> args second js/parseInt))]
       (set! helpers/*global-evaluator* repl)
-      (set! helpers/*kind* (or (some-> args (nth 2) keyword)
+      (set! helpers/*kind* (or (some->> args (drop 2) first keyword)
                                :not-shadow))
       (test/run-all-tests)))
 
