@@ -60,22 +60,28 @@
     (reify repl/Evaluator
       (-evaluate [_ command options]
         (let [cmd (if-let [ns (:namespace options)]
-                    (str "(in-ns '" ns ") " command "\n")
-                    (str "" command "\n"))]
+                    (str "(in-ns '" ns ")\n" command "\n")
+                    (str command "\n"))]
           (try
-            {:result (sci/eval-string cmd {:env env})
+            {:result
+             (sci/binding [sci/file (:filename options)]
+                (sci/eval-string cmd {:env env}))
              :options options}
             (catch #?(:clj Throwable :cljs :default) e
               {:error e})))))))
 
 (defn prepare-repl [evaluator]
-  (doto evaluator
-        (repl/eval (str "(ns foo (:require [clojure.string :as str]))\n"
-                        "(defn my-fun \"My doc\" [] (+ 1 2))\n"
-                        "(def some-var 10)\n"))))
+  (when evaluator
+    (doto evaluator
+          (repl/eval (str "(ns foo (:require [clojure.string :as str]))\n"
+                          "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                          "(def some-var 10)\n")
+                     {:filename "test/duck_repled/tests.cljs"}))))
 
 (def ^:dynamic *global-evaluator*
   (connect-sci!))
 
 (def ^:dynamic *cljs-evaluator*
   (connect-sci!))
+
+(def ^:dynamic *kind* :not-shadow)
