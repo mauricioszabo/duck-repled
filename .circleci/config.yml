@@ -1,7 +1,7 @@
 version: 2.1
 defaults: &defaults
   machine:
-    image: circleci/node:latest
+    image: ubuntu-2004:202104-01
 
 jobs:
   deps:
