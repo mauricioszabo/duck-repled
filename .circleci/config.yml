@@ -69,7 +69,7 @@ jobs:
     steps:
       - attach_workspace:
           at: '.'
-      - run: sudo apt install tmux
+      - run: sudo apt install tmux npm nodejs rlwrap
       - run: sudo npm install -g lumo-cljs --unsafe-perm
       - run: tmux new-session -d
       - run: tmux send-keys 'lumo -n 4444 ' Enter
