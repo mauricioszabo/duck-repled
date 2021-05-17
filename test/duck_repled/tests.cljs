@@ -14,7 +14,7 @@
         (js/process.exit 0)
         (js/process.exit 1)))
     (when (-> args count (= 1))
-      (test/run-all-tests)))
+      (test/run-all-tests #"duck-repled.*-test")))
 
   (when (-> args count (>= 2))
     (p/let [repl (helpers/connect-socket! "localhost"
@@ -22,7 +22,7 @@
       (set! helpers/*global-evaluator* repl)
       (set! helpers/*kind* (or (some->> args (drop 2) first keyword)
                                :not-shadow))
-      (test/run-all-tests)))
+      (test/run-all-tests #"duck-repled.*-test")))
 
   (when (= [] args)
     (prn :loaded)))
