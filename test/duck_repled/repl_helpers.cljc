@@ -84,4 +84,4 @@
 (def ^:dynamic *cljs-evaluator*
   (connect-sci!))
 
-(def ^:dynamic *kind* :not-shadow)
+(def ^:dynamic *kind* :sci)

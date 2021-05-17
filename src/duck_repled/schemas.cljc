@@ -35,8 +35,18 @@
    :text/contents (m/schema string?)
    :text/range (m/schema range)
 
+   :file/path (m/schema [:vector string?])
+   :file/filename (m/schema string?)
+   :file/exists? (m/schema boolean?)
+
    :config/repl-kind (m/schema keyword?)
    :config/eval-as (m/schema [:enum :clj :cljs :prefer-clj :prefer-cljs])
+   :config/project-paths (m/schema [:vector string?])
+
+   :definition/row (m/schema int?)
+   :definition/col (m/schema int?)
+   :definition/filename (m/schema string?)
+   :definition/file-contents (m/schema string?)
 
    :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
