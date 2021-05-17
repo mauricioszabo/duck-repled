@@ -46,6 +46,7 @@
    :repl/code (m/schema string?)
    :repl/result (m/schema [:map [:result any?]])
    :repl/error (m/schema [:map [:error any?]])
+   :repl/template (m/schema any?)
 
    :var/meta (m/schema any?)
    :var/fqn (m/schema qualified-symbol?)
