@@ -10,13 +10,17 @@
     (defmethod test/report [::test/default :summary] [{:keys [fail error] :as result}]
       (if (= 0 fail error)
         (js/process.exit 0)
-        (js/process.exit 1))))
+        (js/process.exit 1)))
+    (when (-> args count (= 1))
+      (test/run-all-tests)))
 
-  (if (-> args count (= 2))
+  (when (-> args count (>= 2))
     (p/let [repl (helpers/connect-socket! "localhost"
                                           (-> args second js/parseInt))]
       (set! helpers/*global-evaluator* repl)
-      (test/run-all-tests))
-    (test/run-all-tests))
+      (set! helpers/*kind* (or (some-> args (nth 2) keyword)
+                               :not-shadow))
+      (test/run-all-tests)))
 
-  (prn :loaded))
+  (when (= [] args)
+    (prn :loaded)))
