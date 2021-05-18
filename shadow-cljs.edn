@@ -4,5 +4,4 @@
                   :main duck-repled.tests/main
                   :compiler-options {:warnings {:fn-deprecated false}
                                      :load-tests true
-                                     :output-feature-set :es-next
-                                     :optimizations :simple}}}}
+                                     :output-feature-set :es-next}}}}
