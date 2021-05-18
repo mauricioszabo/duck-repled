@@ -15,7 +15,7 @@
                       (catch #?(:cljs :default :clj Throwable) _
                         {:result result}))]
         (swap! pending dissoc :buffer id)
-        (p/resolve! promise (merge result opts))))))
+        (p/resolve! promise (assoc result :options opts))))))
 
 (defn- connect! [host port]
   #?(:clj nil
@@ -27,10 +27,10 @@
           (.on conn "connect" #(resolve {:conn conn :pending pending}))
           (.on conn "data" #(treat-data pending %)))))))
 
-
 (def ^:private ex
   (str
    "#?("
+   " :bb java.lang.Throwable"
    " :clj java.lang.Throwable"
    " :joker Error"
    " :cljs :default"
@@ -52,9 +52,11 @@
 
 (defn connect-socket! [host port]
   (p/let [{:keys [pending conn]} (connect! host port)]
-    (reify repl/Evaluator
-      (-evaluate [_ command options]
-        (eval! conn pending command options)))))
+    (p/do!
+     (p/delay 1000)
+     (reify repl/Evaluator
+       (-evaluate [_ command options]
+                  (eval! conn pending command options))))))
 
 (defn connect-sci! []
   (let [env (atom {})]

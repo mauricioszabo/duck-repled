@@ -72,18 +72,20 @@
 (pco/defresolver spec-for-var [{:keys [var/fqn repl/evaluator]}]
   {::pco/output [:var/spec]}
 
-  (p/let [{:keys [result]}
-          (repl/eval
-            evaluator
-            (template `(let [s# (clojure.spec.alpha/get-spec ' ::fqn)
-                             fun# #(some->> (% s) clojure.spec.alpha/describe)]
-                         (when s#
-                           (->> [:args :ret :fn]
-                                (map (juxt identity fun#))
-                                (filter second)
-                                (into {}))))
-                      {::fqn fqn}))]
-    (when result {:var/spec result})))
+  (p/let [res (repl/eval evaluator "(clojure.core.require 'clojure.spec.alpha)")]
+    (when-not (:error res)
+      (p/let [{:keys [result]}
+              (repl/eval
+               evaluator
+               (template `(let [s# (clojure.spec.alpha/get-spec ' ::fqn)
+                                fun# #(some->> (% s) clojure.spec.alpha/describe)]
+                            (when s#
+                              (->> [:args :ret :fn]
+                                   (map (juxt identity fun#))
+                                   (filter second)
+                                   (into {}))))
+                         {::fqn fqn}))]
+        (when result {:var/spec result})))))
 
 (pco/defresolver doc-for-var [{:var/keys [fqn meta spec]}]
   {::pco/input [:var/fqn :var/meta (pco/? :var/spec)]

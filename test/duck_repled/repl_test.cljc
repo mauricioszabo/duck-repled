@@ -6,16 +6,13 @@
             [duck-repled.repl-helpers :as helpers]
             [duck-repled.repl-protocol :as repl]))
 
-(defn- prepare-repl []
-  (helpers/prepare-repl helpers/*global-evaluator*))
-
-(defn- prepare-cljs-repl []
-  (helpers/prepare-repl helpers/*cljs-evaluator*))
+(defn- prepare-two-repls []
+  (p/all [(helpers/prepare-repl helpers/*global-evaluator*)
+          (helpers/prepare-repl helpers/*cljs-evaluator*)]))
 
 (deftest repl-definition
-  (async-test "will run on CLJ or CLJS REPL depending on what's expected"
-    (p/let [clj-ish (prepare-repl)
-            cljs-ish (prepare-cljs-repl)
+  (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
+    (p/let [[clj-ish cljs-ish] (prepare-two-repls)
             seed {:repl/evaluators {:cljs cljs-ish :clj clj-ish}
                   :editor/data {:contents "(ns foo)\nflavor"
                                 :range [[1 0] [1 0]]}
@@ -37,8 +34,8 @@
                   => {:editor/current-var {:repl/result {:result :cljs}}})))))))
 
 (deftest eval-commands
-  (async-test "given that you have a REPL, you can eval commands" {:timeout 8000}
-    (p/let [sci (prepare-repl)]
+  (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
+    (p/let [sci (helpers/prepare-repl helpers/*global-evaluator*)]
       (p/do!
        (testing "evaluates command"
          (check (core/eql {:repl/evaluator sci :text/contents "(+ 1 2)"}
@@ -78,9 +75,8 @@
                       :editor/top-block {:repl/result {:result -8}}})))))))
 
 (deftest getting-infos-about-vars
-  (async-test "will get full qualified names"
-    (p/let [evaluator (prepare-repl)
-            cljs (prepare-repl)
+  (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
+    (p/let [[evaluator cljs] (prepare-two-repls)
             seed {:repl/evaluators {:clj evaluator :cljs cljs}
                   :editor/data {:contents "(ns foo)\nmy-fun"
                                 :filename "file.clj"

@@ -4,7 +4,7 @@
             [duck-repled.core :as core]))
 
 (deftest editor-data
-  (async-test "separates editor data into fragments"
+  (async-test "separates editor data into fragments" {:timeout 8000}
     (check (core/eql {:editor/data {:contents "(+ 1 2)"
                                     :filename nil
                                     :range [[0 0] [0 0]]}}
@@ -54,7 +54,7 @@
                                     :text/contents "( \n ( 2 3)"}}))))
 
 (deftest config-for-repl
-  (async-test "configure how we eval CLJ or CLJS"
+  (async-test "separates editor data into fragments" {:timeout 8000}
     (testing "configuring everything to be CLJ or CLJS"
       (check (core/eql {:config/repl-kind :clj, :config/eval-as :clj}
                        [:repl/kind])
@@ -107,7 +107,7 @@
              => {:repl/kind :cljs}))))
 
 (deftest ns-from-contents
-  (async-test "gets the current namespace from file"
+  (async-test "separates editor data into fragments" {:timeout 8000}
     (let [seed {:editor/contents "\n(ns first.namespace)\n\n(+ 1 2)\n\n(ns second.ns)\n\n(+ 3 4)"}]
       (testing "gets namespace if declaration is below current selection"
         (check (core/eql (assoc seed :editor/range [[0 0] [0 0]])
