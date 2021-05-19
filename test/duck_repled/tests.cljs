@@ -24,8 +24,10 @@
     (set! helpers/*global-evaluator* #(helpers/connect-socket!
                                        "localhost"
                                        (-> args second js/parseInt)))
-    (set! helpers/*kind* (or (some->> args (drop 2) first keyword)
-                             :not-shadow))
+
+    (when (-> args count (>= 3))
+      (prn :SET (nth args 2))
+      (set! helpers/*kind* (keyword (nth args 2))))
     (test/run-all-tests #"duck-repled.*-test"))
 
   (when (= [] args)
