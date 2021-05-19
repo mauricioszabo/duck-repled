@@ -15,7 +15,8 @@
             result (try
                       (edn/read-string {:default tagged-literal} result)
                       (catch #?(:cljs :default :clj Throwable) _
-                        {:result result}))]
+                        {(if (re-find #"^\{:result" result) :result :error)
+                         result}))]
         (swap! pending dissoc :buffer :pending)
         (when promise
           (p/resolve! promise (assoc result :options opts)))))))
@@ -71,6 +72,9 @@
                  (-evaluate [_ command options]
                     (eval! conn pending command options)))
           res (repl/eval repl ":ok")]
+    (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
+                      "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                      "(def some-var 10)\n"))
     repl))
 
 (defn connect-sci! []
