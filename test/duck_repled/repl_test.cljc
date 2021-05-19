@@ -85,33 +85,65 @@
       (p/do!
        (repl/eval evaluator "(defn my-clj-fun \"Another doc\" [] (+ 1 2))\n" {:namespace "foo"})
        (testing "will get full qualified name of var"
-         (check (core/eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))
+         (check (core/eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))))))
 
-       (testing "will get metadata of a var"
-         (check (core/eql seed [:var/meta]) => {:var/meta {:doc "My doc"}}))
+(deftest getting-meta-and-dependent
+  (when (#{:sci :shadow} helpers/*kind*)
+    (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
+      (p/let [[evaluator cljs] (prepare-two-repls)
+              seed {:repl/evaluators {:clj evaluator :cljs cljs}
+                    :editor/data {:contents "(ns foo)\nmy-fun"
+                                  :filename "file.clj"
+                                  :range [[1 0] [1 0]]}
+                    :config/eval-as :prefer-clj}]
+        (p/do!
+         (testing "will get metadata of a var"
+           (check (core/eql seed [:var/meta]) => {:var/meta {:doc "My doc"}}))
 
-       (testing "will get metadata of a var using CLJS"
-         (check (core/eql (-> seed
-                              (assoc :repl/kind :cljs :config/repl-kind :clj))
-                          [:var/meta])
-                => {:var/meta {:doc "My doc"}}))
+         (testing "will get metadata of a var using CLJS"
+           (check (core/eql (-> seed
+                                (assoc :repl/kind :cljs :config/repl-kind :clj))
+                            [:var/meta])
+                  => {:var/meta {:doc "My doc"}}))
 
-       (testing "will get metadata of a var using Clojure if it doesn't exist in CLJS"
-         (check (core/eql (-> seed
-                              (assoc :repl/kind :cljs :config/repl-kind :clj)
-                              (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
-                          [:var/meta])
-                => {:var/meta {:doc "Another doc"}}))
+         (testing "will get metadata of a var using Clojure if it doesn't exist in CLJS"
+           (check (core/eql (-> seed
+                                (assoc :repl/kind :cljs :config/repl-kind :clj)
+                                (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
+                            [:var/meta])
+                  => {:var/meta {:doc "Another doc"}}))
 
-       (testing "will get DOC for that current var"
-         (check (core/eql (-> seed
-                              (assoc :repl/kind :cljs :config/repl-kind :clj)
-                              (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
-                          [:var/doc])
-                => {:var/doc (str "-------------------------\n"
-                                  "foo/my-clj-fun\n"
-                                  "([])\n"
-                                  "  Another doc")}))))))
+         (testing "will get DOC for that current var"
+           (check (core/eql (-> seed
+                                (assoc :repl/kind :cljs :config/repl-kind :clj)
+                                (assoc-in [:editor/data :contents] "(ns foo)\nmy-clj-fun"))
+                            [:var/doc])
+                  => {:var/doc (str "-------------------------\n"
+                                    "foo/my-clj-fun\n"
+                                    "([])\n"
+                                    "  Another doc")}))))))
+
+  (when (#{:clojerl} helpers/*kind*)
+    (async-test "will coerce infos from #erl maps" {:timeout 8000}
+      (p/let [evaluator (helpers/prepare-repl helpers/*global-evaluator*)
+              seed {:repl/evaluators {:clj evaluator}
+                    :editor/data {:contents "(ns foo)\nmy-fun"
+                                  :filename "file.clj"
+                                  :range [[1 0] [1 0]]}
+                    :config/repl-kind :clje
+                    :config/eval-as :prefer-clj}]
+        (p/do!
+         (testing "will get metadata of a var"
+           (check (core/eql seed [:var/meta]) => {:var/meta {:doc "My doc"}}))
+
+         (testing "will get DOC for that current var"
+           (check (core/eql (assoc-in seed [:editor/data :contents]
+                                      "(ns foo)\nmy-clj-fun")
+                            [:var/doc])
+                  => {:var/doc (str "-------------------------\n"
+                                    "foo/my-clj-fun\n"
+                                    "([])\n"
+                                    "  Another doc")})))))))
 
 #?(:cljs
    (defn- ^:dev/after-load run []
