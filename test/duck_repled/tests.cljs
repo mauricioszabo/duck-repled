@@ -26,7 +26,6 @@
                                        (-> args second js/parseInt)))
 
     (when (-> args count (>= 3))
-      (prn :SET (nth args 2))
       (set! helpers/*kind* (keyword (nth args 2))))
     (test/run-all-tests #"duck-repled.*-test"))
 
