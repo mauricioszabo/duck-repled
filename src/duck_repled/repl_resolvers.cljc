@@ -4,6 +4,7 @@
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
             [duck-repled.template :refer [template]]
+            [clojure.walk :as walk]
             [promesa.core :as p]))
 
 (connect/defresolver get-right-repl [{:repl/keys [kind evaluators]}]
@@ -57,9 +58,18 @@
     (when result {:var/meta result})))
 
 (connect/defresolver meta-for-var
-  [{:keys [repl/namespace editor/current-var repl/evaluator]}]
-  {::pco/output [:var/meta] ::pco/priority 1}
-  (eval-for-meta evaluator current-var namespace))
+  [{:keys [repl/namespace editor/current-var repl/evaluator config/repl-kind]}]
+  {::pco/input [:repl/namespace :editor/current-var :repl/evaluator
+                (pco/? :config/repl-kind)]
+   ::pco/output [:var/meta]
+   ::pco/priority 1}
+  (p/let [meta (eval-for-meta evaluator current-var namespace)]
+    (if (= :clje repl-kind)
+      (walk/postwalk #(cond-> %
+                              (and (tagged-literal? %) (-> % .-tag (= 'erl)))
+                              .-form)
+                     meta)
+      meta)))
 
 (connect/defresolver meta-for-clj-var
   [{:keys [repl/namespace editor/current-var repl/clj repl/kind]}]
@@ -72,18 +82,20 @@
 (pco/defresolver spec-for-var [{:keys [var/fqn repl/evaluator]}]
   {::pco/output [:var/spec]}
 
-  (p/let [{:keys [result]}
-          (repl/eval
-            evaluator
-            (template `(let [s# (clojure.spec.alpha/get-spec ' ::fqn)
-                             fun# #(some->> (% s) clojure.spec.alpha/describe)]
-                         (when s#
-                           (->> [:args :ret :fn]
-                                (map (juxt identity fun#))
-                                (filter second)
-                                (into {}))))
-                      {::fqn fqn}))]
-    (when result {:var/spec result})))
+  (p/let [res (repl/eval evaluator "(require 'clojure.spec.alpha)")]
+    (when-not (:error res)
+      (p/let [{:keys [result]}
+              (repl/eval
+               evaluator
+               (template `(let [s# (clojure.spec.alpha/get-spec ' ::fqn)
+                                fun# #(some->> (% s) clojure.spec.alpha/describe)]
+                            (when s#
+                              (->> [:args :ret :fn]
+                                   (map (juxt identity fun#))
+                                   (filter second)
+                                   (into {}))))
+                         {::fqn fqn}))]
+        (when result {:var/spec result})))))
 
 (pco/defresolver doc-for-var [{:var/keys [fqn meta spec]}]
   {::pco/input [:var/fqn :var/meta (pco/? :var/spec)]

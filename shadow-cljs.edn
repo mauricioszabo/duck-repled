@@ -3,4 +3,5 @@
                   :output-to "lib/main.js"
                   :main duck-repled.tests/main
                   :compiler-options {:warnings {:fn-deprecated false}
+                                     :load-tests true
                                      :output-feature-set :es-next}}}}

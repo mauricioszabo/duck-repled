@@ -55,21 +55,22 @@ jobs:
       - run: unzip babashka*zip
       - run: ./bb --socket-repl 4444 & sleep 2; node lib/main.js --test 4444
 
-  joker:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: '.'
-      - run: wget https://github.com/candid82/joker/releases/download/v0.15.6/joker-0.15.6-linux-amd64.zip
-      - run: unzip joker*.zip
-      - run: ./joker --exit-to-repl localhost:4444 & sleep 2; node lib/main.js --test 4444
+  # joker:
+  #   <<: *defaults
+  #   steps:
+  #     - attach_workspace:
+  #         at: '.'
+  #     - run: wget https://github.com/candid82/joker/releases/download/v0.15.6/joker-0.15.6-linux-amd64.zip
+  #     - run: unzip joker*.zip
+  #     - run: ./joker --exit-to-repl localhost:4444 & sleep 2; node lib/main.js --test 4444 joker
 
   lumo:
     <<: *defaults
     steps:
       - attach_workspace:
           at: '.'
-      - run: sudo apt install tmux npm nodejs rlwrap
+      - run: sudo apt update
+      - run: sudo apt install tmux npm rlwrap
       - run: sudo npm install -g lumo-cljs --unsafe-perm
       - run: tmux new-session -d
       - run: tmux send-keys 'lumo -n 4444 ' Enter
@@ -88,7 +89,7 @@ jobs:
       - run: tmux new-session -d
       - run: tmux send-keys 'rebar3 clojerl repl' Enter
       - run: tmux send-keys "(do (require 'clojure.core.server) (clojure.core.server/start-server {:name \"socket-repl\" :port 4444 :accept 'clojure.main/repl :address \"localhost\"}))" Enter
-      - run: sleep 20; node lib/main.js --test 4444
+      - run: sleep 20; node lib/main.js --test 4444 clojerl
 
   clojureclr:
     docker:
@@ -136,13 +137,13 @@ workflows:
             tags:
               only:
                 - /^v.+/
-      - joker:
-          requires:
-            - test-cljs
-          filters:
-            tags:
-              only:
-                - /^v.+/
+      # - joker:
+      #     requires:
+      #       - test-cljs
+      #     filters:
+      #       tags:
+      #         only:
+      #           - /^v.+/
       - lumo:
           requires:
             - test-cljs
