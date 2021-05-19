@@ -83,7 +83,6 @@
                                 :range [[1 0] [1 0]]}
                   :config/eval-as :prefer-clj}]
       (p/do!
-       (repl/eval evaluator "(defn my-clj-fun \"Another doc\" [] (+ 1 2))\n" {:namespace "foo"})
        (testing "will get full qualified name of var"
          (check (core/eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))))))
 
@@ -97,6 +96,7 @@
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
         (p/do!
+         (repl/eval evaluator "(defn my-clj-fun \"Another doc\" [] (+ 1 2))\n" {:namespace "foo"})
          (testing "will get metadata of a var"
            (check (core/eql seed [:var/meta]) => {:var/meta {:doc "My doc"}}))
 

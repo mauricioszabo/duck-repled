@@ -57,10 +57,6 @@
                                       {:namespace (str namespace)})]
     (when result {:var/meta result})))
 
-; (def t (tagged-literal 'erl {:foo 10}))
-;
-; (tagged-literal? t)
-; (.-form t)
 (connect/defresolver meta-for-var
   [{:keys [repl/namespace editor/current-var repl/evaluator config/repl-kind]}]
   {::pco/input [:repl/namespace :editor/current-var :repl/evaluator
