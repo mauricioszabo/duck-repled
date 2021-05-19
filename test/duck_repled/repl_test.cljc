@@ -137,13 +137,11 @@
            (check (core/eql seed [:var/meta]) => {:var/meta {:doc "My doc"}}))
 
          (testing "will get DOC for that current var"
-           (check (core/eql (assoc-in seed [:editor/data :contents]
-                                      "(ns foo)\nmy-clj-fun")
-                            [:var/doc])
+           (check (core/eql seed [:var/doc])
                   => {:var/doc (str "-------------------------\n"
-                                    "foo/my-clj-fun\n"
+                                    "foo/my-fun\n"
                                     "([])\n"
-                                    "  Another doc")})))))))
+                                    "  My doc")})))))))
 
 #?(:cljs
    (defn- ^:dev/after-load run []
