@@ -108,4 +108,4 @@
 (defonce ^:dynamic *cljs-evaluator*
   connect-sci!)
 
-(def ^:dynamic *kind* :not-shadow)
+(defonce ^:dynamic *kind* :sci)
