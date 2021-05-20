@@ -33,6 +33,7 @@ jobs:
           paths:
             - ./docker-image.img
             - lib
+            - test/duck_repled/tests.cljs
             - node_modules
 
   test-clj:
