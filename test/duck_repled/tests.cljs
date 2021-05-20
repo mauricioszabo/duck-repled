@@ -14,8 +14,13 @@
   (set! helpers/*global-evaluator* #(helpers/connect-socket!
                                      "localhost"
                                      (js/parseInt port)))
-  (set! helpers/*cljs-evaluator* (constantly nil))
-  (set! helpers/*kind* (or kind :not-shadow)))
+
+  (set! helpers/*kind* (or (some-> kind keyword) :not-shadow))
+  (if (= :shadow helpers/*kind*)
+    (set! helpers/*cljs-evaluator* #(helpers/connect-node-repl!
+                                     "localhost"
+                                     (js/parseInt port)))
+    (set! helpers/*cljs-evaluator* (constantly nil))))
 
 (defn main [ & args]
   (when (-> args first (= "--test"))

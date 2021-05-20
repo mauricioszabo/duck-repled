@@ -6,13 +6,9 @@
             [duck-repled.repl-helpers :as helpers]
             [duck-repled.repl-protocol :as repl]))
 
-(defn- prepare-two-repls []
-  (p/all [(helpers/prepare-repl helpers/*global-evaluator*)
-          (helpers/prepare-repl helpers/*cljs-evaluator*)]))
-
 (deftest repl-definition
   (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
-    (p/let [[clj-ish cljs-ish] (prepare-two-repls)
+    (p/let [[clj-ish cljs-ish] (helpers/prepare-two-repls)
             seed {:repl/evaluators {:cljs cljs-ish :clj clj-ish}
                   :editor/data {:contents "(ns foo)\nflavor"
                                 :range [[1 0] [1 0]]}
@@ -76,8 +72,8 @@
 
 (deftest getting-infos-about-vars
   (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
-    (p/let [[evaluator cljs] (prepare-two-repls)
-            seed {:repl/evaluators {:clj evaluator :cljs cljs}
+    (p/let [evaluator (helpers/prepare-repl helpers/*global-evaluator*)
+            seed {:repl/evaluators {:clj evaluator}
                   :editor/data {:contents "(ns foo)\nmy-fun"
                                 :filename "file.clj"
                                 :range [[1 0] [1 0]]}
@@ -87,9 +83,9 @@
          (check (core/eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))))))
 
 (deftest getting-meta-and-dependent
-  (when (#{:sci :shadow} helpers/*kind*)
+  (when helpers/*cljs-evaluator*
     (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
-      (p/let [[evaluator cljs] (prepare-two-repls)
+      (p/let [[evaluator cljs] (helpers/prepare-two-repls)
               seed {:repl/evaluators {:clj evaluator :cljs cljs}
                     :editor/data {:contents "(ns foo)\nmy-fun"
                                   :filename "file.clj"
