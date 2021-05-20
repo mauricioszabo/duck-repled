@@ -102,7 +102,7 @@ jobs:
       - run: dotnet tool install --global --version 1.10.0-alpha1 Clojure.Main
       - run: tmux new-session -d
       - run: tmux send-keys "/root/.dotnet/tools/Clojure.Main -e \"(clojure.core.server/start-server {:name \\\"test\\\" :port 4444 :accept 'clojure.core.server/repl})(read)\"" Enter
-      - run: sleep 20; node lib/main.js --test 4444
+      - run: sleep 20; node lib/main.js --test 4444 cljr
 
 workflows:
   version: 2
