@@ -73,8 +73,17 @@
 
 (defn connect-socket! [host port]
   (p/let [{:keys [pending conn]} (connect! host port)
+          repl (->SocketREPL pending conn)
+          res (repl/eval repl ":ok")]
+    (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
+                      "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                      "(def some-var 10)\n"))
+    repl))
+
+(defn connect-node-repl! [host port]
+  (p/let [{:keys [pending conn]} (connect! host port)
           repl (->SocketREPL pending conn)]
-          ; res (repl/eval repl ":ok")]
+    (.write conn "(shadow.cljs.devtools.api/node-repl)\n")
     (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
                       "(defn my-fun \"My doc\" [] (+ 1 2))\n"
                       "(def some-var 10)\n"))
@@ -112,3 +121,7 @@
   connect-sci!)
 
 (defonce ^:dynamic *kind* :sci)
+
+(defn prepare-two-repls []
+  (p/all [(prepare-repl *global-evaluator*)
+          (prepare-repl *cljs-evaluator*)]))
