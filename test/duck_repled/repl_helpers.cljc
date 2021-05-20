@@ -66,12 +66,15 @@
                        " '__eval_result_end]\n"))
      promise)))
 
+(defrecord SocketREPL [pending conn]
+  repl/Evaluator
+  (-evaluate [_ command options]
+    (eval! conn pending command options)))
+
 (defn connect-socket! [host port]
   (p/let [{:keys [pending conn]} (connect! host port)
-          repl (reify repl/Evaluator
-                 (-evaluate [_ command options]
-                    (eval! conn pending command options)))
-          res (repl/eval repl ":ok")]
+          repl (->SocketREPL pending conn)]
+          ; res (repl/eval repl ":ok")]
     (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
                       "(defn my-fun \"My doc\" [] (+ 1 2))\n"
                       "(def some-var 10)\n"))
@@ -94,12 +97,12 @@
 
 (defn prepare-repl [evaluator-fn]
   (p/let [evaluator (evaluator-fn)
-          result
-          (some-> evaluator
-                  (repl/eval (str "(ns foo (:require [clojure.string :as str]))\n"
-                                  "(defn my-fun \"My doc\" [] (+ 1 2))\n"
-                                  "(def some-var 10)\n")
-                             {:filename "test/duck_repled/tests.cljs"}))]
+          _ (when (and evaluator (not (instance? SocketREPL evaluator)))
+              (repl/eval evaluator
+                         (str "(ns foo (:require [clojure.string :as str]))\n"
+                              "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                              "(def some-var 10)\n")
+                         {:filename "test/duck_repled/tests.cljs"}))]
     evaluator))
 
 (defonce ^:dynamic *global-evaluator*

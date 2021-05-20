@@ -10,6 +10,13 @@
 (defmethod test/report [::test/default :begin-test-var] [m]
   (println "Testing:" (test/testing-vars-str m)))
 
+(defn- connect-socket! [[port kind]]
+  (set! helpers/*global-evaluator* #(helpers/connect-socket!
+                                     "localhost"
+                                     (js/parseInt port)))
+  (set! helpers/*cljs-evaluator* (constantly nil))
+  (set! helpers/*kind* (or kind :not-shadow)))
+
 (defn main [ & args]
   (when (-> args first (= "--test"))
     (defmethod test/report [::test/default :summary] [{:keys [test pass fail error]}]
@@ -22,12 +29,7 @@
       (test/run-all-tests #"duck-repled.*-test")))
 
   (when (-> args count (>= 2))
-    (set! helpers/*global-evaluator* #(helpers/connect-socket!
-                                       "localhost"
-                                       (-> args second js/parseInt)))
-
-    (when (-> args count (>= 3))
-      (set! helpers/*kind* (keyword (nth args 2))))
+    (connect-socket! (rest args))
     (test/run-all-tests #"duck-repled.*-test"))
 
   (when (= [] args)
