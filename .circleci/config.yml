@@ -104,6 +104,18 @@ jobs:
       - run: tmux send-keys "/root/.dotnet/tools/Clojure.Main -e \"(clojure.core.server/start-server {:name \\\"test\\\" :port 4444 :accept 'clojure.core.server/repl})(read)\"" Enter
       - run: sleep 20; node lib/main.js --test 4444 cljr
 
+  shadow-cljs:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: '.'
+      - run: sudo apt update
+      - run: sudo apt install tmux npm
+      - run: "echo '{}' > shadow-cljs.edn"
+      - run: tmux new-session -d
+      - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
+      - run: sleep 20; node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
+
 workflows:
   version: 2
   default-workflow:
@@ -159,6 +171,13 @@ workflows:
               only:
                 - /^v.+/
       - clojureclr:
+          requires:
+            - test-cljs
+          filters:
+            tags:
+              only:
+                - /^v.+/
+      - shadow-cljs:
           requires:
             - test-cljs
           filters:
