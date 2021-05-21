@@ -20,7 +20,7 @@
     (set! helpers/*cljs-evaluator* #(helpers/connect-node-repl!
                                      "localhost"
                                      (js/parseInt port)))
-    (set! helpers/*cljs-evaluator* (constantly nil))))
+    (set! helpers/*cljs-evaluator* nil)))
 
 (defn main [ & args]
   (when (-> args first (= "--test"))
