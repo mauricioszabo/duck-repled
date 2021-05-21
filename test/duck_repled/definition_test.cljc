@@ -53,8 +53,12 @@
               seed {:repl/evaluators {:clj repl}
                     :repl/kind :cljr
                     :editor/data {:contents "(ns foo)\nstr/replace"
+                                  :filename "file.clj"
                                   :range [[1 0] [1 0]]}
-                    :config/eval-as :prefer-clj}]))))
+                    :config/eval-as :prefer-clj}]
+        (check (core/eql seed [:definition/filename :definition/row])
+               => {:definition/filename #"clojure.main.*string.clj"
+                   :definition/row number?})))))
 
 #?(:cljs
    (defn- ^:dev/after-load run []
