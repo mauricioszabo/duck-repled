@@ -7,27 +7,89 @@
             [duck-repled.editor-resolvers :as editor]
             [duck-repled.repl-resolvers :as repl]
             [duck-repled.definition-resolvers :as def]
-            [com.wsscode.pathom3.connect.operation :as pco]))
+            [promesa.core :as p]
+            [com.wsscode.pathom3.connect.operation :as pco]
+            [clojure.set :as set]))
 
-(def ^:private resolvers (concat editor/resolvers
-                                 repl/resolvers
-                                 def/resolvers))
-(def ^:private env (-> resolvers
-                       indexes/register
-                       (plugin/register (plugins/attribute-errors-plugin))))
+(def ^:private original-resolvers (vec (concat editor/resolvers
+                                               repl/resolvers
+                                               def/resolvers)))
+
+(def ^:private resolvers (atom original-resolvers))
+
+(defn- gen-resolver-fun [fun outputs]
+  (fn [_ input]
+    (p/let [result (fun input)]
+      (schemas/validate! (keys result)
+                         result
+                         (str "Invalid schema on custom resolver outputing " outputs)))))
+
+(defn add-resolver [{:keys [inputs outputs priority] :as config} fun]
+  (when-let [errors (schemas/explain-add-resolver config)]
+    (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
+
+  (swap! resolvers
+         conj
+         (pco/resolver (gensym "custom-resolver-")
+                       {::pco/input inputs
+                        ::pco/output outputs
+                        ::pco/priority (or priority 50)}
+                       (gen-resolver-fun fun outputs))))
+
+(defn- rename-resolve-out [resolve-out]
+  (let [out-ns (namespace resolve-out)
+        out-name (name resolve-out)]
+    (keyword out-ns (str out-name "-rewrote"))))
+
+(defn- rename-resolvers-that-output [outputs]
+  (let [rewroted-map (zipmap outputs (map rename-resolve-out outputs))]
+    (for [resolver original-resolvers
+          :let [resolver-out (-> resolver :config ::pco/output)
+                new-out (mapv #(cond-> % (rewroted-map %) rewroted-map)
+                              resolver-out)
+                fun (:resolve resolver)]]
+      (if (= resolver-out new-out)
+        resolver
+        (pco/resolver (-> resolver :config ::pco/op-name (str "-renamed") symbol)
+                      {::pco/input (-> resolver :config ::pco/input)
+                       ::pco/output new-out
+                       ::pco/priority (-> resolver :config (::pco/priority 0))}
+                      (fn [ & args]
+                        (p/let [res (apply fun args)]
+                          (set/rename-keys res rewroted-map))))))))
+
+(defn compose-resolver [{:keys [inputs outputs priority] :as config} fun]
+  (when-let [errors (schemas/explain-add-resolver config)]
+    (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
+
+  (let [renamed-resolvers (rename-resolvers-that-output outputs)
+        renamed (map rename-resolve-out outputs)
+        inputs (into inputs renamed)
+        fun (fn [_ input]
+              (-> input
+                  (set/rename-keys (zipmap renamed outputs))
+                  fun))]
+    (reset! resolvers (vec renamed-resolvers))
+    (swap! resolvers
+           conj
+           (pco/resolver (gensym "custom-resolver-")
+                       {::pco/input inputs
+                        ::pco/output outputs
+                        ::pco/priority (or priority 50)}
+                       (gen-resolver-fun fun outputs)))))
+
+(defn reset-resolvers []
+  (reset! resolvers original-resolvers))
 
 (defn eql
-  ([query]
-   (eql/process env query))
+  ([query] (query {} query))
   ([seed query]
    (schemas/validate! (keys seed) seed)
-   (eql/process (assoc env :seed seed) query)))
-
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
-
+   (-> @resolvers
+       indexes/register
+       (plugin/register (plugins/attribute-errors-plugin))
+       (assoc :seed seed)
+       (eql/process query))))
 
 ; (pco/defresolver default-namespaces [env {:keys [repl/kind]}]
 ;   {::pco/output [:repl/namespace] ::pco/priority 0}

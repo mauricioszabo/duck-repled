@@ -68,23 +68,28 @@
 
    :map (:map (m/base-schemas))})
 
-#_
-(validate! [:config/eval-as]
-           {:config/eval-as :clja})
-
 (def explainer
   (memoize (fn [schemas]
              (let [mapped (apply vector :map schemas)]
                 (m/explainer mapped {:registry registry})))))
 
+(def ^:private registry-keys (-> registry keys set))
 (defn validate!
   ([schemas value]
    (validate! schemas value "Value does not match schema: "))
   ([schemas value explanation]
-   (let [explain (explainer schemas)
+   (let [schemas (filter registry-keys schemas)
+         explain (explainer schemas)
          exp-error (explain value)
          exp (e/humanize exp-error)]
      (when exp
        (throw (ex-info (str explanation exp)
                        {:human-error exp :details exp-error})))
      value)))
+
+(def ^:private explain-add-resolver
+  (comp e/humanize
+        (m/explainer [:map {:closed true}
+                      [:inputs [:vector qualified-keyword?]]
+                      [:outputs [:vector qualified-keyword?]]
+                      [:priority {:optional true} number?]])))
