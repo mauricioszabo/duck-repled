@@ -1,4 +1,6 @@
 {:lein true
+ :socket-repl {:port 4321}
+
  :builds {:tests {:target :node-script
                   :output-to "lib/main.js"
                   :main duck-repled.tests/main

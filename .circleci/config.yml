@@ -35,6 +35,7 @@ jobs:
             - lib
             - test/duck_repled/tests.cljs
             - node_modules
+            - shadow-cljs.edn
 
   test-clj:
     <<: *defaults
@@ -112,10 +113,9 @@ jobs:
           at: '.'
       - run: sudo apt update
       - run: sudo apt install tmux npm
-      - run: "echo '{}' > shadow-cljs.edn"
       - run: tmux new-session -d
       - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
-      - run: sleep 20; node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
+      - run: sleep 30; node lib/main.js --test 4321 shadow
 
 workflows:
   version: 2
