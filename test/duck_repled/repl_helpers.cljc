@@ -105,7 +105,7 @@
               {:error e})))))))
 
 (defn prepare-repl [evaluator-fn]
-  (p/let [evaluator (evaluator-fn)
+  (p/let [evaluator (when evaluator-fn (evaluator-fn))
           _ (when (and evaluator (not (instance? SocketREPL evaluator)))
               (repl/eval evaluator
                          (str "(ns foo (:require [clojure.string :as str]))\n"
