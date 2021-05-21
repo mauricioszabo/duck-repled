@@ -44,13 +44,14 @@
                     :definition/col 4})))))
 
 (deftest resolving-filenames-in-clj
-  (async-test "resolves filenames and contents, if inside JAR"
+  (async-test "resolves filenames and contents, if inside jar"
     (when (= :shadow helpers/*kind*)
       (p/let [[clj cljs] (helpers/prepare-two-repls)
               seed {:repl/evaluators {:cljs cljs :clj clj}
                     :editor/data {:contents "(ns foo)\nstr/replace"
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
+        (def seed seed)
         (p/do!
          (testing "finds JAR and unpacks in CLJ and CLJS funcions"
            (check (core/eql (assoc-in seed [:editor/data :filename] "file.clj")
@@ -61,8 +62,21 @@
            (check (core/eql (assoc-in seed [:editor/data :filename] "file.cljs")
                             [:definition/filename :definition/file-contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.cljs"
-                      :definition/file-contents string?})))))
+                      :definition/file-contents string?}))
 
+         (testing "getting path of stacktrace"
+           (check (core/eql (-> seed
+                                (assoc-in [:editor/data :filename] "file.clj")
+                                (assoc :ex/function-name "clojure.string/fn/eval1234"
+                                       :ex/filename "string.clj"
+                                       :ex/row 9
+                                       :repl/evaluator (-> seed :repl/evaluators :clj)))
+                            [:definition/filename :definition/row])
+                  => {:definition/row 8
+                      :definition/filename #"clojure.*jar!/clojure/string.clj"})))))))
+
+(deftest resolving-filenames-in-cljr
+  (async-test "resolves filenames and contents, if internal from CLR"
     (when (= :cljr helpers/*kind*)
       (p/let [repl (helpers/prepare-repl helpers/*global-evaluator*)
               seed {:repl/evaluators {:clj repl}

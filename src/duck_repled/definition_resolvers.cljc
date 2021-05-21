@@ -86,15 +86,16 @@
            :definition/file-contents result})
         {:definition/filename filename}))))
 
-(connect/defresolver file-from-clr [{:keys [:repl/evaluator :var/meta]}]
+(connect/defresolver file-from-clr [{:keys [:repl/evaluator :var/meta :repl/kind]}]
   {::pco/output [:definition/filename]}
-  (p/let [code (template `(some-> ::file
-                                  clojure.lang.RT/FindFile
-                                  str)
-                         {::file (:file meta)})
-          {:keys [result]} (repl/eval evaluator code)]
-    (when result
-      {:definition/filename (norm-result result)})))
+  (when (= :cljr kind)
+    (p/let [code (template `(some-> ::file
+                                    clojure.lang.RT/FindFile
+                                    str)
+                           {::file (:file meta)})
+            {:keys [result]} (repl/eval evaluator code)]
+      (when result
+        {:definition/filename (norm-result result)}))))
 
 (connect/defresolver resolver-for-ns-only [{:keys [:repl/evaluator :editor/current-var]}]
   {::pco/output [:var/meta :definition/row :definition/col]}
@@ -119,6 +120,31 @@
                    :definition/row (-> result :line dec)}
                   col (assoc :definition/col col)))))))
 
+(connect/defresolver resolver-for-stacktrace [{:repl/keys [evaluator]
+                                               :ex/keys [function-name filename row]}]
+  {::pco/input [:repl/evaluator :ex/function-name :ex/filename (pco/? :ex/row)]
+   ::pco/output [:var/meta :definition/row]
+   ::pco/priority 3}
+
+  (prn ::LOL)
+  (p/let [ns-name (-> function-name (str/split #"/") first)
+          code (template `(let [n# (find-ns '::namespace-sym)]
+                            (->> n#
+                                 ns-interns
+                                 (some (fn [[_# res#]]
+                                         (let [meta# (meta res#)
+                                               file# (-> meta# :file str)]
+                                           (and (clojure.string/ends-with? file#
+                                                                           ::file-name)
+                                                (select-keys meta# [:file])))))))
+                         {::namespace-sym (symbol ns-name)
+                          ::file-name filename})
+          _ (println code)
+          {:keys [result]} (repl/eval evaluator code)]
+    (prn :RES result)
+    {:var/meta result
+     :definition/row (dec row)}))
+
 (def resolvers [join-paths-resolver file-exists-resolver position-resolver
                 existing-filename clojure-filename file-from-clr
-                resolver-for-ns-only])
+                resolver-for-ns-only resolver-for-stacktrace])

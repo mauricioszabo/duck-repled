@@ -48,6 +48,10 @@
    :definition/filename (m/schema string?)
    :definition/file-contents (m/schema string?)
 
+   :ex/function-name (m/schema string?)
+   :ex/filename (m/schema string?)
+   :ex/row (m/schema int?)
+
    :repl/kind (m/schema keyword?)
    :repl/namespace (m/schema simple-symbol?)
    :repl/evaluators (m/schema [:map [:clj any?] [:cljs {:optional true} any?]])
