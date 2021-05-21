@@ -96,5 +96,29 @@
     (when result
       {:definition/filename (norm-result result)})))
 
+(connect/defresolver resolver-for-ns-only [{:keys [:repl/evaluator :editor/current-var]}]
+  {::pco/output [:var/meta :definition/row :definition/col]}
+
+  (let [fqn (-> current-var :text/contents symbol)]
+    (when (-> fqn namespace nil?)
+      (p/let [code (template `(let [ns# (find-ns '::namespace-sym)
+                                     first-var# (some-> ns#
+                                                        ns-interns
+                                                        first
+                                                        second
+                                                        meta
+                                                        :file)
+                                     ns-meta# (meta ns#)]
+                                (cond-> ns-meta#
+                                        first-var# (assoc :file first-var#)))
+                             {::namespace-sym fqn})
+              {:keys [result]} (repl/eval evaluator code)
+              col (some-> result :column dec)]
+        (when result
+          (cond-> {:var/meta result
+                   :definition/row (-> result :line dec)}
+                  col (assoc :definition/col col)))))))
+
 (def resolvers [join-paths-resolver file-exists-resolver position-resolver
-                existing-filename clojure-filename file-from-clr])
+                existing-filename clojure-filename file-from-clr
+                resolver-for-ns-only])

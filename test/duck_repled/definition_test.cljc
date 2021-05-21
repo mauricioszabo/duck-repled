@@ -28,6 +28,21 @@
          (check (core/eql seed [:definition/filename])
                 => {:definition/filename "test/duck_repled/tests.cljs"}))))))
 
+(deftest ns-definition
+  (when (#{:sci} helpers/*kind*)
+    (async-test "find definition of a namespace"
+      (p/let [repl (helpers/prepare-repl helpers/*global-evaluator*)
+              seed {:repl/evaluators {:clj repl}
+                    :editor/data {:contents "(ns foo)\nmy-fun"
+                                  :filename "file.clj"
+                                  :range [[0 5] [0 5]]}
+                    :config/eval-as :prefer-clj}]
+
+         (check (core/eql seed [:definition/filename :definition/row :definition/col])
+                => {:definition/filename "test/duck_repled/tests.cljs"
+                    :definition/row 0
+                    :definition/col 4})))))
+
 (deftest resolving-filenames-in-clj
   (async-test "resolves filenames and contents, if inside JAR"
     (when (= :shadow helpers/*kind*)
