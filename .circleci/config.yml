@@ -25,6 +25,8 @@ jobs:
       - run:
           command: docker load -i docker-image.img
       - run:
+          command: wget https://github.com/borkdude/babashka/releases/download/v0.1.2/babashka-0.1.2-linux-static-amd64.zip && unzip bb*zip
+      - run:
           command: "docker run -it tests node lib/main.js --test"
       - run:
           command: "docker run -v `pwd`:/temp -it tests cp -av . /temp"
@@ -32,6 +34,7 @@ jobs:
           root: '.'
           paths:
             - ./docker-image.img
+            - bb
             - lib
             - test/duck_repled/tests.cljs
             - node_modules
@@ -53,8 +56,6 @@ jobs:
     steps:
       - attach_workspace:
           at: '.'
-      - run: wget https://github.com/borkdude/babashka/releases/download/v0.1.3/babashka-0.1.3-linux-amd64.zip
-      - run: unzip babashka*zip
       - run: ./bb --socket-repl 4444 & sleep 2; node lib/main.js --test 4444
 
   # joker:
@@ -115,7 +116,8 @@ jobs:
       - run: sudo apt install tmux npm
       - run: tmux new-session -d
       - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
-      - run: sleep 30; node lib/main.js --test 4321 shadow
+      - run: ./bb -e '(future (Thread/sleep 6000) (println "SocketREPL did not start") (System/exit 1)) (while (not (.exists (File. ".shadow-cljs/socket-repl.port"))) (Thread/sleep 200))'
+      - run: node lib/main.js --test `.shadow-cljs/socket-repl.port` shadow
 
 workflows:
   version: 2

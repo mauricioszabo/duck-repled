@@ -15,8 +15,6 @@
                                                repl/resolvers
                                                def/resolvers)))
 
-(def ^:private resolvers (atom original-resolvers))
-
 (defn- gen-resolver-fun [fun outputs]
   (fn [_ input]
     (p/let [result (fun input)]
@@ -24,26 +22,39 @@
                          result
                          (str "Invalid schema on custom resolver outputing " outputs)))))
 
-(defn add-resolver [{:keys [inputs outputs priority] :as config} fun]
-  (when-let [errors (schemas/explain-add-resolver config)]
-    (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
+(defn- gen-eql [resolvers]
+  (fn query
+    ([query] (query {} query))
+    ([seed query]
+     (schemas/validate! (keys seed) seed)
+     (-> resolvers
+         indexes/register
+         (plugin/register (plugins/attribute-errors-plugin))
+         (assoc :seed seed)
+         (eql/process query)))))
 
-  (swap! resolvers
-         conj
-         (pco/resolver (gensym "custom-resolver-")
-                       {::pco/input inputs
-                        ::pco/output outputs
-                        ::pco/priority (or priority 50)}
-                       (gen-resolver-fun fun outputs))))
+(defn add-resolver
+  ([config fun] (add-resolver original-resolvers config fun))
+  ([resolvers {:keys [inputs outputs priority] :as config} fun]
+   (when-let [errors (schemas/explain-add-resolver config)]
+     (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
+
+   (-> resolvers
+       (conj (pco/resolver (gensym "custom-resolver-")
+                           {::pco/input inputs
+                            ::pco/output outputs
+                            ::pco/priority (or priority 50)}
+                           (gen-resolver-fun fun outputs)))
+       gen-eql)))
 
 (defn- rename-resolve-out [resolve-out]
   (let [out-ns (namespace resolve-out)
         out-name (name resolve-out)]
     (keyword out-ns (str out-name "-rewrote"))))
 
-(defn- rename-resolvers-that-output [outputs]
+(defn- rename-resolvers-that-output [resolvers outputs]
   (let [rewroted-map (zipmap outputs (map rename-resolve-out outputs))]
-    (for [resolver original-resolvers
+    (for [resolver resolvers
           :let [resolver-out (-> resolver :config ::pco/output)
                 new-out (mapv #(cond-> % (rewroted-map %) rewroted-map)
                               resolver-out)
@@ -58,38 +69,37 @@
                         (p/let [res (apply fun args)]
                           (set/rename-keys res rewroted-map))))))))
 
-(defn compose-resolver [{:keys [inputs outputs priority] :as config} fun]
-  (when-let [errors (schemas/explain-add-resolver config)]
-    (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
+(defn compose-resolver
+  ([config fun] (compose-resolver original-resolvers config fun))
+  ([resolvers {:keys [inputs outputs priority] :as config} fun]
+   (when-let [errors (schemas/explain-add-resolver config)]
+     (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
 
-  (let [renamed-resolvers (rename-resolvers-that-output outputs)
-        renamed (map rename-resolve-out outputs)
-        inputs (into inputs renamed)
-        fun (fn [_ input]
-              (-> input
-                  (set/rename-keys (zipmap renamed outputs))
-                  fun))]
-    (reset! resolvers (vec renamed-resolvers))
-    (swap! resolvers
-           conj
-           (pco/resolver (gensym "custom-resolver-")
-                       {::pco/input inputs
-                        ::pco/output outputs
-                        ::pco/priority (or priority 50)}
-                       (gen-resolver-fun fun outputs)))))
+   (let [renamed-resolvers (rename-resolvers-that-output resolvers outputs)
+         renamed (map rename-resolve-out outputs)
+         inputs (into inputs renamed)
+         fun (fn [input]
+               (-> input
+                   (set/rename-keys (zipmap renamed outputs))
+                   fun))]
+     (-> renamed-resolvers
+         vec
+         (conj (pco/resolver (gensym "custom-resolver-")
+                             {::pco/input inputs
+                              ::pco/output outputs
+                              ::pco/priority (or priority 50)}
+                             (gen-resolver-fun fun outputs)))
+         (gen-eql)))))
 
-(defn reset-resolvers []
-  (reset! resolvers original-resolvers))
-
-(defn eql
-  ([query] (query {} query))
-  ([seed query]
-   (schemas/validate! (keys seed) seed)
-   (-> @resolvers
-       indexes/register
-       (plugin/register (plugins/attribute-errors-plugin))
-       (assoc :seed seed)
-       (eql/process query))))
+(def eql (gen-eql original-resolvers))
+  ; ([query] (query {} query))
+  ; ([seed query]
+  ;  (schemas/validate! (keys seed) seed)
+  ;  (-> @resolvers
+  ;      indexes/register
+  ;      (plugin/register (plugins/attribute-errors-plugin))
+  ;      (assoc :seed seed)
+  ;      (eql/process query))))
 
 ; (pco/defresolver default-namespaces [env {:keys [repl/kind]}]
 ;   {::pco/output [:repl/namespace] ::pco/priority 0}
