@@ -87,7 +87,7 @@
                        {:human-error exp :details exp-error})))
      value)))
 
-(def ^:private explain-add-resolver
+(def explain-add-resolver
   (comp e/humanize
         (m/explainer [:map {:closed true}
                       [:inputs [:vector qualified-keyword?]]

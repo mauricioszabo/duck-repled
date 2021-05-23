@@ -92,14 +92,6 @@
          (gen-eql)))))
 
 (def eql (gen-eql original-resolvers))
-  ; ([query] (query {} query))
-  ; ([seed query]
-  ;  (schemas/validate! (keys seed) seed)
-  ;  (-> @resolvers
-  ;      indexes/register
-  ;      (plugin/register (plugins/attribute-errors-plugin))
-  ;      (assoc :seed seed)
-  ;      (eql/process query))))
 
 ; (pco/defresolver default-namespaces [env {:keys [repl/kind]}]
 ;   {::pco/output [:repl/namespace] ::pco/priority 0}
