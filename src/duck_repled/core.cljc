@@ -22,7 +22,7 @@
                          result
                          (str "Invalid schema on custom resolver outputing " outputs)))))
 
-(defn- gen-eql
+(defn gen-eql
   ([] (gen-eql original-resolvers))
   ([resolvers]
    (fn query
