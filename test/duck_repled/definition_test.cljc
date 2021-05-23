@@ -6,10 +6,11 @@
             [duck-repled.repl-helpers :as helpers]
             [duck-repled.repl-protocol :as repl]))
 
+(def eql (core/gen-eql))
 (deftest file-checkers
   (async-test "finds if file exists"
-    (check (core/eql {:file/path ["test" "duck_repled" "tests.cljs"]}
-                     [:file/filename :file/exists?])
+    (check (eql {:file/path ["test" "duck_repled" "tests.cljs"]}
+                [:file/filename :file/exists?])
            => {:file/filename "test/duck_repled/tests.cljs"
                :file/exists? true})))
 
@@ -24,8 +25,8 @@
 
       (when (#{:sci} helpers/*kind*)
         (p/do!
-         (check (core/eql seed [:definition/row]) => {:definition/row 1})
-         (check (core/eql seed [:definition/filename])
+         (check (eql seed [:definition/row]) => {:definition/row 1})
+         (check (eql seed [:definition/filename])
                 => {:definition/filename "test/duck_repled/tests.cljs"}))))))
 
 (deftest ns-definition
@@ -38,7 +39,7 @@
                                   :range [[0 5] [0 5]]}
                     :config/eval-as :prefer-clj}]
 
-         (check (core/eql seed [:definition/filename :definition/row :definition/col])
+         (check (eql seed [:definition/filename :definition/row :definition/col])
                 => {:definition/filename "test/duck_repled/tests.cljs"
                     :definition/row 0
                     :definition/col 4})))))
@@ -54,24 +55,24 @@
         (def seed seed)
         (p/do!
          (testing "finds JAR and unpacks in CLJ and CLJS funcions"
-           (check (core/eql (assoc-in seed [:editor/data :filename] "file.clj")
-                            [:definition/filename :definition/file-contents])
+           (check (eql (assoc-in seed [:editor/data :filename] "file.clj")
+                       [:definition/filename :definition/file-contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.clj"
                       :definition/file-contents string?})
 
-           (check (core/eql (assoc-in seed [:editor/data :filename] "file.cljs")
-                            [:definition/filename :definition/file-contents])
+           (check (eql (assoc-in seed [:editor/data :filename] "file.cljs")
+                       [:definition/filename :definition/file-contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.cljs"
                       :definition/file-contents string?}))
 
          (testing "getting path of stacktrace"
-           (check (core/eql (-> seed
-                                (assoc-in [:editor/data :filename] "file.clj")
-                                (assoc :ex/function-name "clojure.string/fn/eval1234"
-                                       :ex/filename "string.clj"
-                                       :ex/row 9
-                                       :repl/evaluator (-> seed :repl/evaluators :clj)))
-                            [:definition/filename :definition/row])
+           (check (eql (-> seed
+                           (assoc-in [:editor/data :filename] "file.clj")
+                           (assoc :ex/function-name "clojure.string/fn/eval1234"
+                                  :ex/filename "string.clj"
+                                  :ex/row 9
+                                  :repl/evaluator (-> seed :repl/evaluators :clj)
+                            [:definition/filename :definition/row])))
                   => {:definition/row 8
                       :definition/filename #"clojure.*jar!/clojure/string.clj"})))))))
 
@@ -85,7 +86,7 @@
                                   :filename "file.clj"
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
-        (check (core/eql seed [:definition/filename :definition/row])
+        (check (eql seed [:definition/filename :definition/row])
                => {:definition/filename #"clojure.main.*string.clj"
                    :definition/row number?})))))
 
