@@ -22,16 +22,18 @@
                          result
                          (str "Invalid schema on custom resolver outputing " outputs)))))
 
-(defn- gen-eql [resolvers]
-  (fn query
-    ([query] (query {} query))
-    ([seed query]
-     (schemas/validate! (keys seed) seed)
-     (-> resolvers
-         indexes/register
-         (plugin/register (plugins/attribute-errors-plugin))
-         (assoc :seed seed)
-         (eql/process query)))))
+(defn- gen-eql
+  ([] (gen-eql original-resolvers))
+  ([resolvers]
+   (fn query
+     ([query] (query {} query))
+     ([seed query]
+      (schemas/validate! (keys seed) seed)
+      (-> resolvers
+          indexes/register
+          (plugin/register (plugins/attribute-errors-plugin))
+          (assoc :seed seed)
+          (eql/process query))))))
 
 (defn add-resolver
   ([config fun] (add-resolver original-resolvers config fun))
@@ -90,8 +92,6 @@
                               ::pco/priority (or priority 50)}
                              (gen-resolver-fun fun outputs)))
          (gen-eql)))))
-
-(def eql (gen-eql original-resolvers))
 
 ; (pco/defresolver default-namespaces [env {:keys [repl/kind]}]
 ;   {::pco/output [:repl/namespace] ::pco/priority 0}
