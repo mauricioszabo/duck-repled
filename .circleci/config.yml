@@ -117,7 +117,7 @@ jobs:
       - run: tmux new-session -d
       - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
       - run: ./bb -e '(future (Thread/sleep 60000) (println "SocketREPL did not start") (System/exit 1)) (while (not (.exists (File. ".shadow-cljs/socket-repl.port"))) (Thread/sleep 200))'
-      - run: node lib/main.js --test `.shadow-cljs/socket-repl.port` shadow
+      - run: node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
 
 workflows:
   version: 2
