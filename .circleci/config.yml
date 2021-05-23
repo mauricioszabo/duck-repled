@@ -25,7 +25,7 @@ jobs:
       - run:
           command: docker load -i docker-image.img
       - run:
-          command: wget https://github.com/babashka/babashka/releases/download/v0.4.3/babashka-0.4.3-linux-amd64-static.tar.gz && unzip babashka-0.4.3-linux-amd64-static.tar.gz
+          command: wget https://github.com/babashka/babashka/releases/download/v0.4.3/babashka-0.4.3-linux-amd64-static.tar.gz && tar -xf babashka-0.4.3-linux-amd64-static.tar.gz
       - run:
           command: "docker run -it tests node lib/main.js --test"
       - run:
