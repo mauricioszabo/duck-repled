@@ -47,7 +47,7 @@
 
 (connect/defresolver existing-filename [{:keys [:var/meta]}]
   {::pco/output [:definition/filename]
-   ::pco/priority 1}
+   ::pco/priority 3}
 
   (when (file-exists? (:file meta))
     {:definition/filename (-> meta :file norm-result)}))
@@ -124,9 +124,8 @@
                                                :ex/keys [function-name filename row]}]
   {::pco/input [:repl/evaluator :ex/function-name :ex/filename (pco/? :ex/row)]
    ::pco/output [:var/meta :definition/row]
-   ::pco/priority 3}
+   ::pco/priority 20}
 
-  (prn ::LOL)
   (p/let [ns-name (-> function-name (str/split #"/") first)
           code (template `(let [n# (find-ns '::namespace-sym)]
                             (->> n#
@@ -139,9 +138,7 @@
                                                 (select-keys meta# [:file])))))))
                          {::namespace-sym (symbol ns-name)
                           ::file-name filename})
-          _ (println code)
           {:keys [result]} (repl/eval evaluator code)]
-    (prn :RES result)
     {:var/meta result
      :definition/row (dec row)}))
 
