@@ -1,4 +1,5 @@
 # Duck-REPL'ed
+[![<ORG_NAME>](https://circleci.com/gh/mauricioszabo/duck-repled.svg?style=svg)](<LINK>)
 
 ![A Duck](doc/duck.svg)
 
