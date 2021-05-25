@@ -55,7 +55,7 @@ jobs:
     steps:
       - attach_workspace:
           at: '.'
-      - run: ./bb --socket-repl 4444 & sleep 20; node lib/main.js --test 4444
+      - run: nohup ./bb --socket-repl 4444 & sleep 20; node lib/main.js --test 4444
 
   # joker:
   #   <<: *defaults
