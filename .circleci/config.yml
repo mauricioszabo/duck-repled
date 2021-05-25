@@ -119,8 +119,8 @@ jobs:
       - run: echo '{}' > shadow-cljs.edn
       - run: tmux new-session -d
       - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
-      - run: ./bb -e '(when-not (babashka.wait/wait-for-path ".shadow-cljs/socket-repl.port" {:timeout 60000}) (System/exit 1))'
-      - run: sleep 20 && node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow || node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow || node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
+      - run: ./bb -e '(when-not (babashka.wait/wait-for-path ".shadow-cljs/socket-repl.port" {:timeout 60000}) (System/exit 1))' && sleep 20
+      - run: node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow || node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow || node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
 
 workflows:
   version: 2
