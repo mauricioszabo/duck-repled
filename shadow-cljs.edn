@@ -1,4 +1,7 @@
 {:lein true
+ :socket-repl {:port 4321}
+
+ :jvm-opts ["-Xmx800M"]
  :builds {:tests {:target :node-script
                   :output-to "lib/main.js"
                   :main duck-repled.tests/main

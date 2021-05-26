@@ -1,6 +1,7 @@
 (ns duck-repled.tests
   (:require [duck-repled.editor-test]
             [duck-repled.repl-test]
+            [duck-repled.definition-test]
             [clojure.test :as test]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]
@@ -8,6 +9,18 @@
 
 (defmethod test/report [::test/default :begin-test-var] [m]
   (println "Testing:" (test/testing-vars-str m)))
+
+(defn- connect-socket! [[port kind]]
+  (set! helpers/*global-evaluator* #(helpers/connect-socket!
+                                     "localhost"
+                                     (js/parseInt port)))
+
+  (set! helpers/*kind* (or (some-> kind keyword) :not-shadow))
+  (if (= :shadow helpers/*kind*)
+    (set! helpers/*cljs-evaluator* #(helpers/connect-node-repl!
+                                     "localhost"
+                                     (js/parseInt port)))
+    (set! helpers/*cljs-evaluator* nil)))
 
 (defn main [ & args]
   (when (-> args first (= "--test"))
@@ -21,12 +34,7 @@
       (test/run-all-tests #"duck-repled.*-test")))
 
   (when (-> args count (>= 2))
-    (set! helpers/*global-evaluator* #(helpers/connect-socket!
-                                       "localhost"
-                                       (-> args second js/parseInt)))
-
-    (when (-> args count (>= 3))
-      (set! helpers/*kind* (keyword (nth args 2))))
+    (connect-socket! (rest args))
     (test/run-all-tests #"duck-repled.*-test"))
 
   (when (= [] args)

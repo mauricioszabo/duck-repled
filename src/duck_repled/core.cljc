@@ -6,10 +6,12 @@
             [duck-repled.schemas :as schemas]
             [duck-repled.editor-resolvers :as editor]
             [duck-repled.repl-resolvers :as repl]
+            [duck-repled.definition-resolvers :as def]
             [com.wsscode.pathom3.connect.operation :as pco]))
 
 (def ^:private resolvers (concat editor/resolvers
-                                 repl/resolvers))
+                                 repl/resolvers
+                                 def/resolvers))
 (def ^:private env (-> resolvers
                        indexes/register
                        (plugin/register (plugins/attribute-errors-plugin))))
