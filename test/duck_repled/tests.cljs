@@ -2,6 +2,7 @@
   (:require [duck-repled.editor-test]
             [duck-repled.repl-test]
             [duck-repled.definition-test]
+            [duck-repled.core-test]
             [clojure.test :as test]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]
@@ -23,6 +24,10 @@
     (set! helpers/*cljs-evaluator* nil)))
 
 (defn main [ & args]
+  ; (when (->> args first (re-matches #"\d+"))
+  ;   (p/let [repl (helpers/connect-node-repl! "localhost" (js/parseInt (first args)))]
+  ;     (def repl repl)))
+
   (when (-> args first (= "--test"))
     (defmethod test/report [::test/default :summary] [{:keys [test pass fail error]}]
       (println "Ran" test "tests containing" (+ pass fail error) "assertions.")
@@ -35,7 +40,16 @@
 
   (when (-> args count (>= 2))
     (connect-socket! (rest args))
-    (test/run-all-tests #"duck-repled.*-test"))
+    (p/do!
+     (if helpers/*cljs-evaluator*
+       (p/let [res (p/race [(p/delay 120000 ::error)
+                            (helpers/*cljs-evaluator*)])]
+         (if (= res ::error)
+           (do
+             (println "CLJS REPL didn't connect in 2m")
+             (js/process.exit 2))
+           (test/run-all-tests #"duck-repled.*-test")))
+       (test/run-all-tests #"duck-repled.*-test"))))
 
   (when (= [] args)
     (prn :loaded)))

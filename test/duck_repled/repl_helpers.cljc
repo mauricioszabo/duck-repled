@@ -71,23 +71,39 @@
   (-evaluate [_ command options]
     (eval! conn pending command options)))
 
+(defn- wait-for-ok [conn pending]
+  (let [some-sym (str (gensym "some-symbol-") "\n")]
+    (p/loop []
+      (let [buffer (str (:buffer @pending))]
+        (when-not (re-find (re-pattern some-sym) buffer)
+          (p/do!
+           (.write conn (str "'" some-sym))
+           (p/delay 50)
+           (p/recur)))))))
+
 (defn connect-socket! [host port]
   (p/let [{:keys [pending conn]} (connect! host port)
-          repl (->SocketREPL pending conn)
-          res (repl/eval repl ":ok")]
-    (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
-                      "(defn my-fun \"My doc\" [] (+ 1 2))\n"
-                      "(def some-var 10)\n"))
-    repl))
+          repl (->SocketREPL pending conn)]
+    (p/do!
+     (wait-for-ok conn pending)
+     (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
+                       "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                       "(def some-var 10)\n"))
+     (wait-for-ok conn pending)
+     repl)))
 
 (defn connect-node-repl! [host port]
   (p/let [{:keys [pending conn]} (connect! host port)
           repl (->SocketREPL pending conn)]
-    (.write conn "(shadow.cljs.devtools.api/node-repl)\n")
-    (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
-                      "(defn my-fun \"My doc\" [] (+ 1 2))\n"
-                      "(def some-var 10)\n"))
-    repl))
+    (p/do!
+     (wait-for-ok conn pending)
+     (.write conn "(shadow.cljs.devtools.api/node-repl)\n")
+     (wait-for-ok conn pending)
+     (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
+                       "(defn my-fun \"My doc\" [] (+ 1 2))\n"
+                       "(def some-var 10)\n"))
+     (wait-for-ok conn pending)
+     repl)))
 
 (defn connect-sci! []
   (let [env (atom {})]
