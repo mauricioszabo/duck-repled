@@ -128,7 +128,7 @@ jobs:
     steps:
       - attach_workspace:
           at: '.'
-      run: curl https://raw.githubusercontent.com/mauricioszabo/clj-lib-deployer/master/deploy-lein.bb -o deploy && chmod +x deploy
+      - run: curl https://raw.githubusercontent.com/mauricioszabo/clj-lib-deployer/master/deploy-lein.bb -o deploy && chmod +x deploy
       - run: export TAG=$CIRCLE_TAG && ./bb deploy
 
 workflows:
