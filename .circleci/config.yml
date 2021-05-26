@@ -53,6 +53,7 @@ jobs:
   babashka:
     <<: *defaults
     steps:
+      - checkout
       - attach_workspace:
           at: '.'
       - run: sudo apt install tmux
