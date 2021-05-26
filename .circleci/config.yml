@@ -123,6 +123,14 @@ jobs:
       - run: ./bb -e '(when-not (babashka.wait/wait-for-path ".shadow-cljs/socket-repl.port" {:timeout 60000}) (System/exit 1))'
       - run: node lib/main.js --test `cat .shadow-cljs/socket-repl.port` shadow
 
+  publish:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: '.'
+      - run: curl https://raw.githubusercontent.com/mauricioszabo/clj-lib-deployer/master/deploy-lein.bb -o deploy && chmod +x deploy
+      - run: export TAG=$CIRCLE_TAG && ./bb deploy
+
 workflows:
   version: 2
   default-workflow:
@@ -191,3 +199,18 @@ workflows:
             tags:
               only:
                 - /^v.+/
+      - publish:
+          context: Clojure Libs
+          requires:
+            - babashka
+            - lumo
+            - clojerl
+            - clojureclr
+            - shadow-cljs
+          filters:
+            tags:
+              only:
+                - /^v.+/
+            branches:
+              only:
+                - master
