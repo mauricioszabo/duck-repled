@@ -117,6 +117,7 @@ jobs:
       - run: sudo apt update
       - run: sudo apt install tmux npm
       - run: echo '{}' > shadow-cljs.edn
+      - run: npm install source-map-support ws
       - run: tmux new-session -d
       - run: tmux send-keys 'npx shadow-cljs node-repl ' Enter
       - run: ./bb -e '(when-not (babashka.wait/wait-for-path ".shadow-cljs/socket-repl.port" {:timeout 60000}) (System/exit 1))'
