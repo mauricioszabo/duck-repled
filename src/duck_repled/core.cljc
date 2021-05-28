@@ -25,8 +25,8 @@
 (defn gen-eql
   ([] (gen-eql original-resolvers))
   ([resolvers]
-   (fn query
-     ([query] (query {} query))
+   (fn q
+     ([query] (q {} query))
      ([seed query]
       (schemas/validate! (keys seed) seed)
       (-> resolvers
