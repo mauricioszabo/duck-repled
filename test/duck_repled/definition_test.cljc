@@ -71,7 +71,7 @@
                            (assoc-in [:editor/data :contents] "str\nstr")
                            (assoc :ex/function-name "clojure.string/fn/eval1234"
                                   :ex/filename "string.clj"
-                                  :ex/row 9
+                                  :ex/row 8
                                   :repl/evaluator (-> seed :repl/evaluators :clj)))
                        [:definition/filename :definition/row])
                   => {:definition/row 8

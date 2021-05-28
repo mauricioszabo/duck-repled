@@ -117,7 +117,7 @@
               col (some-> result :column dec)]
         (when result
           (cond-> {:var/meta result
-                   :definition/row (-> result :line dec)}
+                   :definition/row (dec (:line result 1))}
                   col (assoc :definition/col col)))))))
 
 (connect/defresolver resolver-for-stacktrace [{:repl/keys [evaluator]
@@ -140,7 +140,7 @@
                           ::file-name filename})
           {:keys [result]} (repl/eval evaluator code)]
     {:var/meta result
-     :definition/row (dec row)}))
+     :definition/row row}))
 
 (def resolvers [join-paths-resolver file-exists-resolver position-resolver
                 existing-filename clojure-filename file-from-clr
