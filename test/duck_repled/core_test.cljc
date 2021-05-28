@@ -8,9 +8,10 @@
   (async-test "custom resolvers"
     (testing "customizing resolves"
       (testing "will add a new resolver with our code"
-        (let [eql (core/add-resolver {:outputs [:editor/file] :inputs [:editor/contents]}
-                                     (fn [{:editor/keys [contents]}]
-                                       {:editor/file (str "filename for " contents)}))]
+        (let [eql (core/gen-eql
+                   (core/add-resolver {:outputs [:editor/file] :inputs [:editor/contents]}
+                                      (fn [{:editor/keys [contents]}]
+                                        {:editor/file (str "filename for " contents)})))]
           (check (eql {:editor/data {:contents "lol"
                                      :filename ""
                                      :range [[0 0] [0 0]]}}
@@ -19,9 +20,10 @@
 
       (testing "will compose original resolver, and add our customization code"
         (let [eql
-              (core/compose-resolver {:outputs [:editor/filename] :inputs [:editor/contents]}
-                                     (fn [{:editor/keys [filename contents]}]
-                                       {:editor/filename (str contents "-" filename)}))]
+              (core/gen-eql
+               (core/compose-resolver {:outputs [:editor/filename] :inputs [:editor/contents]}
+                                      (fn [{:editor/keys [filename contents]}]
+                                        {:editor/filename (str contents "-" filename)})))]
           (check (eql {:editor/data {:contents "lol"
                                      :filename "old.clj"
                                      :range [[0 0] [0 0]]}}

@@ -41,13 +41,12 @@
    (when-let [errors (schemas/explain-add-resolver config)]
      (throw (ex-info "Input to add-resolver is invalid" {:errors errors})))
 
-   (-> resolvers
-       (conj (pco/resolver (gensym "custom-resolver-")
-                           {::pco/input inputs
-                            ::pco/output outputs
-                            ::pco/priority (or priority 50)}
-                           (gen-resolver-fun fun outputs)))
-       gen-eql)))
+   (conj resolvers
+         (pco/resolver (gensym "custom-resolver-")
+                       {::pco/input inputs
+                        ::pco/output outputs
+                        ::pco/priority (or priority 50)}
+                       (gen-resolver-fun fun outputs)))))
 
 (defn- rename-resolve-out [resolve-out]
   (let [out-ns (namespace resolve-out)
@@ -90,8 +89,7 @@
                              {::pco/input inputs
                               ::pco/output outputs
                               ::pco/priority (or priority 50)}
-                             (gen-resolver-fun fun outputs)))
-         (gen-eql)))))
+                             (gen-resolver-fun fun outputs)))))))
 
 ; (pco/defresolver default-namespaces [env {:keys [repl/kind]}]
 ;   {::pco/output [:repl/namespace] ::pco/priority 0}
