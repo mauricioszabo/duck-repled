@@ -45,7 +45,7 @@
                     :definition/col 4})))))
 
 (deftest resolving-filenames-in-clj
-  (async-test "resolves filenames and contents, if inside jar"
+  (async-test "resolves filenames and contents, if inside jar" {:timeout 8000}
     (when (= :shadow helpers/*kind*)
       (p/let [[clj cljs] (helpers/prepare-two-repls)
               seed {:repl/evaluators {:cljs cljs :clj clj}
