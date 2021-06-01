@@ -72,11 +72,11 @@
       meta)))
 
 (connect/defresolver meta-for-clj-var
-  [{:keys [repl/namespace editor/current-var repl/clj repl/kind]}]
+  [{:keys [var/fqn repl/clj repl/kind]}]
   {::pco/output [:var/meta]}
 
   (when (= :cljs kind)
-    (eval-for-meta clj current-var namespace)))
+    (eval-for-meta clj fqn 'user)))
 
 ; TODO: Somehow, test this
 (pco/defresolver spec-for-var [{:keys [var/fqn repl/evaluator]}]
