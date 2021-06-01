@@ -90,6 +90,6 @@
 (def explain-add-resolver
   (comp e/humanize
         (m/explainer [:map {:closed true}
-                      [:inputs [:vector qualified-keyword?]]
-                      [:outputs [:vector qualified-keyword?]]
+                      [:inputs [:vector any?]]
+                      [:outputs [:vector any?]]
                       [:priority {:optional true} number?]])))
