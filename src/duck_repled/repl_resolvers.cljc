@@ -12,10 +12,9 @@
 
   (let [{:keys [clj cljs]} evaluators]
     (cond
-      (not= kind :cljs) {:repl/evaluator clj}
+      (not= kind :cljs) {:repl/evaluator clj :repl/clj clj}
       (nil? clj) {:repl/evaluator cljs}
-      :embedded-cljs {:repl/clj clj
-                      :repl/evaluator cljs})))
+      :else {:repl/clj clj :repl/evaluator cljs})))
 
 (connect/defresolver repl-eval [env {:repl/keys [evaluator namespace]
                                      :text/keys [contents range]
