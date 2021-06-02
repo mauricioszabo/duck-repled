@@ -12,10 +12,9 @@
 
   (let [{:keys [clj cljs]} evaluators]
     (cond
-      (not= kind :cljs) {:repl/evaluator clj}
+      (not= kind :cljs) {:repl/evaluator clj :repl/clj clj}
       (nil? clj) {:repl/evaluator cljs}
-      :embedded-cljs {:repl/clj clj
-                      :repl/evaluator cljs})))
+      :else {:repl/clj clj :repl/evaluator cljs})))
 
 (connect/defresolver repl-eval [env {:repl/keys [evaluator namespace]
                                      :text/keys [contents range]
@@ -47,11 +46,10 @@
                                       {:namespace (str namespace)})]
     {:var/fqn result}))
 
-(defn- eval-for-meta [evaluator current-var namespace]
+(defn- eval-for-meta [evaluator var-name namespace]
   (p/let [{:keys [result]} (repl/eval evaluator
                                       (template `(meta ::current-var)
-                                                {::current-var (->> current-var
-                                                                    :text/contents
+                                                {::current-var (->> var-name
                                                                     (str "#'")
                                                                     symbol)})
                                       {:namespace (str namespace)})]
@@ -63,7 +61,7 @@
                 (pco/? :config/repl-kind)]
    ::pco/output [:var/meta]
    ::pco/priority 1}
-  (p/let [meta (eval-for-meta evaluator current-var namespace)]
+  (p/let [meta (eval-for-meta evaluator (:text/contents current-var) namespace)]
     (if (= :clje repl-kind)
       (walk/postwalk #(cond-> %
                               (and (tagged-literal? %) (-> % .-tag (= 'erl)))
@@ -72,11 +70,11 @@
       meta)))
 
 (connect/defresolver meta-for-clj-var
-  [{:keys [repl/namespace editor/current-var repl/clj repl/kind]}]
+  [{:keys [var/fqn repl/clj repl/kind]}]
   {::pco/output [:var/meta]}
 
   (when (= :cljs kind)
-    (eval-for-meta clj current-var namespace)))
+    (eval-for-meta clj fqn 'user)))
 
 ; TODO: Somehow, test this
 (pco/defresolver spec-for-var [{:keys [var/fqn repl/evaluator]}]
