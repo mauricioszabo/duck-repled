@@ -47,11 +47,10 @@
                                       {:namespace (str namespace)})]
     {:var/fqn result}))
 
-(defn- eval-for-meta [evaluator current-var namespace]
+(defn- eval-for-meta [evaluator var-name namespace]
   (p/let [{:keys [result]} (repl/eval evaluator
                                       (template `(meta ::current-var)
-                                                {::current-var (->> current-var
-                                                                    :text/contents
+                                                {::current-var (->> var-name
                                                                     (str "#'")
                                                                     symbol)})
                                       {:namespace (str namespace)})]
@@ -63,7 +62,7 @@
                 (pco/? :config/repl-kind)]
    ::pco/output [:var/meta]
    ::pco/priority 1}
-  (p/let [meta (eval-for-meta evaluator current-var namespace)]
+  (p/let [meta (eval-for-meta evaluator (:text/contents current-var) namespace)]
     (if (= :clje repl-kind)
       (walk/postwalk #(cond-> %
                               (and (tagged-literal? %) (-> % .-tag (= 'erl)))
