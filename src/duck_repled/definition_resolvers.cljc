@@ -4,6 +4,7 @@
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
             [duck-repled.template :refer [template]]
+            [duck-repled.editor-helpers :as helpers]
             [promesa.core :as p]
             #?(:cljs ["fs" :refer [existsSync statSync]])
             #?(:cljs ["path" :refer [join]])
@@ -97,10 +98,19 @@
       (when result
         {:definition/filename (norm-result result)}))))
 
-(connect/defresolver resolver-for-ns-only [{:keys [:repl/evaluator :editor/current-var]}]
-  {::pco/output [:var/meta :definition/row :definition/col]}
+(defn- extract-right-var [current-var contents]
+  (let [contents (or (:text/contents current-var) contents)
+        [_ var] (helpers/current-var (str contents) [0 0])]
+    (when (and var (= var contents))
+      contents)))
 
-  (let [fqn (-> current-var :text/contents symbol)]
+(connect/defresolver resolver-for-ns-only
+  [{:keys [repl/evaluator text/contents text/current-var]}]
+
+  {::pco/input [:repl/evaluator (pco/? :text/current-var) (pco/? :text/contents)]
+   ::pco/output [:var/meta :definition/row :definition/col]}
+
+  (when-let [fqn (some-> (extract-right-var current-var contents) symbol)]
     (when (-> fqn namespace nil?)
       (p/let [code (template `(let [ns# (find-ns '::namespace-sym)
                                      first-var# (some-> ns#

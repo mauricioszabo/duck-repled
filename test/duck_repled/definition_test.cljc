@@ -1,6 +1,6 @@
 (ns duck-repled.definition-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]
@@ -24,10 +24,9 @@
                   :config/eval-as :prefer-clj}]
 
       (when (#{:sci} helpers/*kind*)
-        (p/do!
-         (check (eql seed [:definition/row]) => {:definition/row 1})
-         (check (eql seed [:definition/filename])
-                => {:definition/filename "test/duck_repled/tests.cljs"}))))))
+        (check (eql seed [:var/meta :definition/filename :definition/row])
+               => {:definition/filename "test/duck_repled/tests.cljs"
+                    :definition/row 1})))))
 
 (deftest ns-definition
   (when (#{:sci} helpers/*kind*)
@@ -90,7 +89,3 @@
         (check (eql seed [:definition/filename :definition/row])
                => {:definition/filename #"clojure.main.*string.clj"
                    :definition/row number?})))))
-
-#?(:cljs
-   (defn- ^:dev/after-load run []
-     (run-tests)))
