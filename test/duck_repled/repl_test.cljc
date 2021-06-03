@@ -1,6 +1,6 @@
 (ns duck-repled.repl-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]
@@ -14,6 +14,7 @@
                   :editor/data {:contents "(ns foo)\nflavor"
                                 :range [[1 0] [1 0]]}
                   :config/eval-as :prefer-clj}]
+
       (p/do!
        (repl/eval clj-ish "(def flavor :clj)" {:namespace "foo"})
        (when cljs-ish
@@ -21,25 +22,27 @@
 
        (testing "will use Clojure REPL"
          (check (eql (assoc-in seed [:editor/data :filename] "file.clj")
-                     [{:editor/current-var [:repl/result]}])
-                => {:editor/current-var {:repl/result {:result :clj}}}))
+                     [{:text/current-var [:repl/result]}])
+                => {:text/current-var {:repl/result {:result :clj}}}))
 
        (when cljs-ish
          (testing "will use ClojureScript REPL"
            (check (eql (assoc-in seed [:editor/data :filename] "file.cljs")
-                       [{:editor/current-var [:repl/result]}])
-                  => {:editor/current-var {:repl/result {:result :cljs}}})))))))
+                       [{:text/current-var [:repl/result]}])
+                  => {:text/current-var {:repl/result {:result :cljs}}})))))))
 
 (deftest eval-commands
   (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
     (p/let [sci (helpers/prepare-repl helpers/*global-evaluator*)]
       (p/do!
        (testing "evaluates command"
-         (check (eql {:repl/evaluator sci :text/contents "(+ 1 2)"}
+         (check (eql {:repl/evaluator sci
+                      :text/contents "(+ 1 2)"}
                      [:repl/result])
                 => {:repl/result {:result 3}})
 
-         (check (eql {:repl/evaluator sci :text/contents "(ex-info)"}
+         (check (eql {:repl/evaluator sci
+                      :text/contents "(ex-info)"}
                      [:repl/error])
                 => {:repl/error {:error any?}}))
 
@@ -64,15 +67,15 @@
                          :contents "(ns foo)\n(+ 1 2)\n(-  (+ 3 4)\n    (+ 5 some-var))"
                          :range [[3 7] [3 8]]}]
            (check (eql {:editor/data editor :repl/evaluator sci}
-                       [{:editor/selection [:repl/result]}
-                        {:editor/block [:repl/result]}
-                        {:editor/top-block [:repl/result]}])
-                  => {:editor/selection {:repl/result {:result 5}}
-                      :editor/block {:repl/result {:result 15}}
-                      :editor/top-block {:repl/result {:result -8}}})))))))
+                       [{:text/selection [:repl/result]}
+                        {:text/block [:repl/result]}
+                        {:text/top-block [:repl/result]}])
+                  => {:text/selection {:repl/result {:result 5}}
+                      :text/block {:repl/result {:result 15}}
+                      :text/top-block {:repl/result {:result -8}}})))))))
 
 (deftest getting-infos-about-vars
-  (async-test "will run on CLJ or CLJS REPL depending on what's expected" {:timeout 8000}
+  (async-test "will get full-qualified name of a var" {:timeout 8000}
     (p/let [evaluator (helpers/prepare-repl helpers/*global-evaluator*)
             seed {:repl/evaluators {:clj evaluator}
                   :editor/data {:contents "(ns foo)\nmy-fun"
@@ -80,8 +83,12 @@
                                 :range [[1 0] [1 0]]}
                   :config/eval-as :prefer-clj}]
       (p/do!
-       (testing "will get full qualified name of var"
-         (check (eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))))))
+       (testing "will find fqn for current var"
+         (check (eql seed [:var/fqn]) => {:var/fqn 'foo/my-fun}))
+
+       (testing "will get full qualified name of selection"
+         (check (eql seed [{:text/selection [:var/fqn]}])
+                => {:text/selection {:var/fqn 'foo/m}}))))))
 
 (deftest getting-meta-and-dependent
   (when helpers/*cljs-evaluator*
@@ -139,7 +146,3 @@
                                     "foo/my-fun\n"
                                     "([])\n"
                                     "  My doc")})))))))
-
-#?(:cljs
-   (defn- ^:dev/after-load run []
-     (run-tests)))
