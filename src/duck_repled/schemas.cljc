@@ -30,10 +30,16 @@
    :editor/top-block (m/schema contents)
    :editor/block (m/schema contents)
    :editor/selection (m/schema contents)
-   ; :editor/current-var-range (m/schema range)
+   :editor/text (m/schema contents)
 
    :text/contents (m/schema string?)
    :text/range (m/schema range)
+   :text/top-blocks (m/schema top-blocks)
+   :text/current-var (m/schema contents)
+   :text/ns (m/schema contents)
+   :text/top-block (m/schema contents)
+   :text/block (m/schema contents)
+   :text/selection (m/schema contents)
 
    :file/path (m/schema [:vector string?])
    :file/filename (m/schema string?)
