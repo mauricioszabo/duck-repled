@@ -1,6 +1,6 @@
 (ns duck-repled.core-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]
             [promesa.core :as p]))
 
@@ -29,7 +29,3 @@
                                      :range [[0 0] [0 0]]}}
                       [:editor/filename])
                  => {:editor/filename "lol-old.clj"}))))))
-
-#?(:cljs
-   (defn- ^:dev/after-load run []
-     (run-tests)))
