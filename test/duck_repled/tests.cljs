@@ -23,6 +23,9 @@
                                      (js/parseInt port)))
     (set! helpers/*cljs-evaluator* nil)))
 
+(defn- ^:dev/after-load run-tests []
+  (test/run-all-tests #"duck-repled.*-test"))
+
 (defn main [ & args]
   ; (when (->> args first (re-matches #"\d+"))
   ;   (p/let [repl (helpers/connect-node-repl! "localhost" (js/parseInt (first args)))]
@@ -36,7 +39,7 @@
         (js/process.exit 0)
         (js/process.exit 1)))
     (when (-> args count (= 1))
-      (test/run-all-tests #"duck-repled.*-test")))
+      (run-tests)))
 
   (when (-> args count (>= 2))
     (connect-socket! (rest args))
@@ -48,8 +51,8 @@
            (do
              (println "CLJS REPL didn't connect in 2m")
              (js/process.exit 2))
-           (test/run-all-tests #"duck-repled.*-test")))
-       (test/run-all-tests #"duck-repled.*-test"))))
+           (run-tests)))
+       (run-tests))))
 
   (when (= [] args)
     (prn :loaded)))
