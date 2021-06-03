@@ -4,6 +4,7 @@
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
             [duck-repled.template :refer [template]]
+            [duck-repled.editor-helpers :as helpers]
             [clojure.walk :as walk]
             [promesa.core :as p]))
 
@@ -38,13 +39,18 @@
       {:repl/result result})))
 
 (connect/defresolver fqn-var
-  [{:keys [repl/namespace editor/current-var repl/evaluator]}]
-  {::pco/output [:var/fqn]}
+  [{:keys [repl/namespace text/current-var text/contents repl/evaluator]}]
+  {::pco/input [:repl/namespace :repl/evaluator
+                (pco/? :text/current-var) (pco/? :text/contents)]
+   ::pco/output [:var/fqn]}
 
-  (p/let [{:keys [result]} (repl/eval evaluator
-                                      (str "`" (:text/contents current-var))
-                                      {:namespace (str namespace)})]
-    {:var/fqn result}))
+  (let [contents (or (:text/contents current-var) contents)
+        [_ var] (helpers/current-var (str contents) [0 0])]
+    (when (and var (= var contents))
+      (p/let [{:keys [result]} (repl/eval evaluator
+                                          (str "`" contents)
+                                          {:namespace (str namespace)})]
+        {:var/fqn result}))))
 
 (defn- eval-for-meta [evaluator var-name namespace]
   (p/let [{:keys [result]} (repl/eval evaluator
