@@ -20,7 +20,7 @@
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/filename (m/schema string?)
-   :editor/text (m/schema contents)
+   :editor/contents (m/schema contents)
 
    :text/contents (m/schema string?)
    :text/range (m/schema range)
@@ -43,7 +43,6 @@
    :definition/row (m/schema int?)
    :definition/col (m/schema int?)
    :definition/filename (m/schema string?)
-   :definition/file-contents (m/schema string?)
    :definition/contents (m/schema contents)
 
    :ex/function-name (m/schema string?)

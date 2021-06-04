@@ -12,12 +12,12 @@
   seed)
 
 (connect/defresolver separate-data [{editor-data :editor/data}]
-  {::pco/output [:editor/filename {:editor/text [:text/contents :text/range]}]}
+  {::pco/output [:editor/filename {:editor/contents [:text/contents :text/range]}]}
 
   ; (when-let [editor-data (-> env :seed :editor/data)]
   (let [file (:filename editor-data)]
-    (cond-> {:editor/text {:text/contents (:contents editor-data)
-                           :text/range (:range editor-data)}}
+    (cond-> {:editor/contents {:text/contents (:contents editor-data)
+                               :text/range (:range editor-data)}}
             file (assoc :editor/filename file))))
 
 (connect/defresolver namespace-from-text [{:text/keys [top-blocks range]}]
@@ -52,10 +52,10 @@
     {:text/selection (cond-> {:text/contents text :text/range range}
                              ns (assoc :text/ns ns))}))
 
-(connect/defresolver default-text-elements [{:keys [editor/text]}]
+(connect/defresolver default-text-elements [{:keys [editor/contents]}]
   {::pco/priority -10}
-  {:text/contents (:text/contents text)
-   :text/range (:text/range text)})
+  {:text/contents (:text/contents contents)
+   :text/range (:text/range contents)})
 
 (connect/defresolver resolver-for-ns [inputs]
   {::pco/input [(pco/? :text/ns)
@@ -63,7 +63,7 @@
    ::pco/output [:repl/namespace]}
 
   (let [contents (or (-> inputs :text/ns :text/contents)
-                     (-> inputs :editor/text :text/ns :text/contents))
+                     (-> inputs :editor/contents :text/ns :text/contents))
         kind (:repl/kind inputs)]
     (cond
       contents {:repl/namespace (symbol contents)}

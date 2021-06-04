@@ -10,17 +10,17 @@
     (check (eql {:editor/data {:contents "(+ 1 2)"
                                :filename nil
                                :range [[0 0] [0 0]]}}
-                [:editor/filename :editor/text])
-           => {:editor/text {:text/contents "(+ 1 2)"
-                             :text/range [[0 0] [0 0]]}})
+                [:editor/filename :editor/contents])
+           => {:editor/contents {:text/contents "(+ 1 2)"
+                                 :text/range [[0 0] [0 0]]}})
 
     (check (eql {:editor/data {:contents "(+ 1 2)"
                                :filename "foo.clj"
                                :range [[0 0] [0 0]]}}
-                [:editor/filename :editor/text])
+                [:editor/filename :editor/contents])
 
-           => {:editor/text {:text/contents "(+ 1 2)"
-                             :text/range [[0 0] [0 0]]}
+           => {:editor/contents {:text/contents "(+ 1 2)"
+                                 :text/range [[0 0] [0 0]]}
                :editor/filename "foo.clj"})
 
     (testing "gets block/selection/etc from `:text/*` elements"
@@ -134,39 +134,39 @@
 
 (deftest ns-from-contents
   (async-test "separates editor data into fragments" {:timeout 8000}
-    (let [seed {:editor/text
+    (let [seed {:editor/contents
                 {:text/contents
                  "\n(ns first.namespace)\n\n(+ 1 2)\n\n(ns second.ns)\n\n(+ 3 4)"}}]
       (p/do!)
       (testing "gets namespace if declaration is below current selection"
-        (check (eql (assoc-in seed [:editor/text :text/range] [[0 0] [0 0]])
+        (check (eql (assoc-in seed [:editor/contents :text/range] [[0 0] [0 0]])
                     [:text/ns])
                => {:text/ns {:text/range [[1 0] [1 19]]
                                        :text/contents "first.namespace"}}))
 
       (testing "gets namespace if declaration is above current selection"
-        (check (eql (assoc-in seed [:editor/text :text/range] [[2 0] [2 0]])
+        (check (eql (assoc-in seed [:editor/contents :text/range] [[2 0] [2 0]])
                     [:text/ns])
                => {:text/ns {:text/range [[1 0] [1 19]]
                              :text/contents "first.namespace"}})
 
-        (check (eql (assoc-in seed [:editor/text :text/range]  [[5 0] [5 0]])
+        (check (eql (assoc-in seed [:editor/contents :text/range]  [[5 0] [5 0]])
                     [:text/ns])
                => {:text/ns {:text/range [[5 0] [5 13]]
                              :text/contents "second.ns"}}))
 
       (testing "gets REPL namespace if a ns exists"
-        (check (eql (assoc-in seed [:editor/text :text/range]  [[2 0] [2 0]])
+        (check (eql (assoc-in seed [:editor/contents :text/range]  [[2 0] [2 0]])
                     [:repl/namespace])
                => {:repl/namespace 'first.namespace}))
 
       (testing "fallback to default if there's no NS in editor"
-        (check (eql {:editor/text {:text/contents "" :text/range [[2 0] [2 0]]}
+        (check (eql {:editor/contents {:text/contents "" :text/range [[2 0] [2 0]]}
                      :repl/kind :clj}
                     [:repl/namespace])
                => {:repl/namespace 'user})
 
-        (check (eql {:editor/text {:text/contents "" :text/range [[2 0] [2 0]]}
+        (check (eql {:editor/contents {:text/contents "" :text/range [[2 0] [2 0]]}
                      :repl/kind :cljs}
                     [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))
