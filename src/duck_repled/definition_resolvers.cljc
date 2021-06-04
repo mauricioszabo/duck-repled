@@ -67,7 +67,8 @@
 (connect/defresolver clojure-filename [{:keys [:repl/evaluator :var/meta
                                                :repl/kind :repl/clj]}]
   {::pco/input [:repl/evaluator :var/meta :repl/kind (pco/? :repl/clj)]
-   ::pco/output [:definition/filename :definition/file-contents]}
+   ::pco/output [:definition/filename :definition/file-contents
+                 {:definition/contents [:text/contents :text/range]}]}
 
   (when-let [repl (case kind
                    :clj evaluator
@@ -82,9 +83,12 @@
             {:keys [result]} (repl/eval repl code)
             filename (norm-result result)]
       (if (re-find #"\.jar!/" filename)
-        (p/let [{:keys [result]} (read-jar repl filename)]
+        (p/let [{:keys [result]} (read-jar repl filename)
+                pos [(-> meta (:line 1) dec) (-> meta (:column 1) dec)]]
           {:definition/filename filename
-           :definition/file-contents result})
+           :definition/file-contents result
+           :definition/contents {:text/contents result
+                                 :text/range [pos pos]}})
         {:definition/filename filename}))))
 
 (connect/defresolver file-from-clr [{:keys [:repl/evaluator :var/meta :repl/kind]}]

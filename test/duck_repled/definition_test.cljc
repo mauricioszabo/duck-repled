@@ -51,18 +51,19 @@
                     :editor/data {:contents "(ns foo)\nstr/replace"
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
-        (def seed seed)
         (p/do!
          (testing "finds JAR and unpacks in CLJ and CLJS funcions"
            (check (eql (assoc-in seed [:editor/data :filename] "file.clj")
-                       [:definition/filename :definition/file-contents])
+                       [:definition/filename :definition/contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.clj"
-                      :definition/file-contents string?})
+                      :definition/contents {:text/contents #"clojure.string"
+                                            :text/range [[74 0] [74 0]]}})
 
            (check (eql (assoc-in seed [:editor/data :filename] "file.cljs")
-                       [:definition/filename :definition/file-contents])
+                       [:definition/filename :definition/contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.cljs"
-                      :definition/file-contents string?}))
+                      :definition/contents {:text/contents #"clojure.string"
+                                            :text/range [[43 0] [43 0]]}}))
 
          (testing "getting path of stacktrace"
            (check (eql (-> seed
