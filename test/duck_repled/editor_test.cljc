@@ -10,53 +10,18 @@
     (check (eql {:editor/data {:contents "(+ 1 2)"
                                :filename nil
                                :range [[0 0] [0 0]]}}
-                [:editor/contents :editor/filename :editor/range
-                 :editor/text])
+                [:editor/filename :editor/text])
            => {:editor/text {:text/contents "(+ 1 2)"
-                             :text/range [[0 0] [0 0]]}
-               :editor/contents "(+ 1 2)"
-               :editor/range [[0 0] [0 0]]})
+                             :text/range [[0 0] [0 0]]}})
 
     (check (eql {:editor/data {:contents "(+ 1 2)"
                                :filename "foo.clj"
                                :range [[0 0] [0 0]]}}
-                [:editor/contents :editor/filename :editor/range])
-           => {:editor/contents "(+ 1 2)"
-               :editor/filename "foo.clj"
-               :editor/range [[0 0] [0 0]]})
+                [:editor/filename :editor/text])
 
-    ; (testing "gets current var"
-    ;   (check (eql {:editor/data {:contents "foo bar"
-    ;                              :filename "foo.clj"
-    ;                              :range [[0 4] [0 4]]}}
-    ;               [{:editor/current-var [:text/contents :text/range]}])
-    ;          => {:editor/current-var {:text/range [[0 4] [0 6]]
-    ;                                   :text/contents "bar"}}))
-    ;
-    ; (testing "gets current top-block"
-    ;   (check (eql {:editor/data {:contents "(+ 1 2)\n\n( \n ( 2 3))"
-    ;                              :filename "foo.clj"
-    ;                              :range [[3 4] [3 7]]}}
-    ;               [{:editor/top-block [:text/contents :text/range]}])
-    ;          => {:editor/top-block {:text/range [[2 0] [3 7]]
-    ;                                 :text/contents "( \n ( 2 3))"}}))
-    ;
-    ;
-    ; (testing "gets current block"
-    ;   (check (eql {:editor/data {:contents "(+ 1 2)\n\n( \n ( 2 3))"
-    ;                              :filename "foo.clj"
-    ;                              :range [[3 4] [3 7]]}}
-    ;               [{:editor/block [:text/contents :text/range]}])
-    ;          => {:editor/block {:text/range [[3 1] [3 6]]
-    ;                             :text/contents "( 2 3)"}}))
-    ;
-    ; (testing "gets current selection"
-    ;   (check (eql {:editor/data {:contents "(+ 1 2)\n\n( \n ( 2 3))"
-    ;                              :filename "foo.clj"
-    ;                              :range [[2 0] [3 6]]}}
-    ;               [{:editor/selection [:text/contents :text/range]}])
-    ;          => {:editor/selection {:text/range [[2 0] [3 6]]
-    ;                                 :text/contents "( \n ( 2 3)"}}))
+           => {:editor/text {:text/contents "(+ 1 2)"
+                             :text/range [[0 0] [0 0]]}
+               :editor/filename "foo.clj"})
 
     (testing "gets block/selection/etc from `:text/*` elements"
       (check (eql {:text/contents "(ns lol)(+ 1 2)\n\n( \n ( 2 3))"
@@ -196,12 +161,12 @@
                => {:repl/namespace 'first.namespace}))
 
       (testing "fallback to default if there's no NS in editor"
-        (check (eql {:editor/contents "" :editor/range [[2 0] [2 0]]
+        (check (eql {:editor/text {:text/contents "" :text/range [[2 0] [2 0]]}
                      :repl/kind :clj}
                     [:repl/namespace])
                => {:repl/namespace 'user})
 
-        (check (eql {:editor/contents "" :editor/range [[2 0] [2 0]]
+        (check (eql {:editor/text {:text/contents "" :text/range [[2 0] [2 0]]}
                      :repl/kind :cljs}
                     [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))

@@ -12,14 +12,11 @@
   seed)
 
 (connect/defresolver separate-data [{editor-data :editor/data}]
-  {::pco/output [:editor/contents :editor/filename :editor/range
-                 {:editor/text [:text/contents :text/range]}]}
+  {::pco/output [:editor/filename {:editor/text [:text/contents :text/range]}]}
 
   ; (when-let [editor-data (-> env :seed :editor/data)]
   (let [file (:filename editor-data)]
-    (cond-> {:editor/contents (:contents editor-data)
-             :editor/range (:range editor-data)
-             :editor/text {:text/contents (:contents editor-data)
+    (cond-> {:editor/text {:text/contents (:contents editor-data)
                            :text/range (:range editor-data)}}
             file (assoc :editor/filename file))))
 

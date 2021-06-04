@@ -19,17 +19,7 @@
 
 (def registry
   {:editor/data (m/schema editor-data)
-   :editor/contents (m/schema string?)
    :editor/filename (m/schema string?)
-   :editor/range (m/schema range)
-   :editor/namespace (m/schema string?)
-   :editor/top-blocks (m/schema top-blocks)
-
-   :editor/current-var (m/schema contents)
-   :editor/ns (m/schema contents)
-   :editor/top-block (m/schema contents)
-   :editor/block (m/schema contents)
-   :editor/selection (m/schema contents)
    :editor/text (m/schema contents)
 
    :text/contents (m/schema string?)
@@ -54,6 +44,7 @@
    :definition/col (m/schema int?)
    :definition/filename (m/schema string?)
    :definition/file-contents (m/schema string?)
+   :definition/contents (m/schema contents)
 
    :ex/function-name (m/schema string?)
    :ex/filename (m/schema string?)
