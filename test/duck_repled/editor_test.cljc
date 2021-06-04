@@ -205,3 +205,15 @@
                      :repl/kind :cljs}
                     [:repl/namespace])
                => {:repl/namespace 'cljs.user})))))
+
+(deftest read-file-contents
+  (async-test "read file contents and extract fragments"
+    (check (eql {:file/filename "test/duck_repled/tests.cljs"}
+                [{:file/contents [:text/ns]}])
+           => {:file/contents {:text/ns {:text/contents "duck-repled.tests"}}})
+
+    (check (eql {:file/filename "test/duck_repled/tests.cljs"}
+                [{'(:file/contents {:range [[10 0] [10 0]]}) [:text/contents :text/top-block]}])
+           => {:file/contents {:text/top-block
+                               {:text/contents #"^.defmethod test/report"
+                                :text/range [[10 0] [11 48]]}}})))

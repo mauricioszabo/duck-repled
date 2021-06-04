@@ -4,7 +4,7 @@
             [duck-repled.connect :as connect]
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.editor-helpers :as editor-helpers]
-            ["fs" :refer [readFileSync]]))
+            #?(:cljs ["fs" :refer [readFileSync]])))
 
 (connect/defresolver seed-data [{:keys [seed]} _]
   {::pco/output (->> schemas/registry keys (remove #{:map}) vec)
@@ -23,27 +23,11 @@
                            :text/range (:range editor-data)}}
             file (assoc :editor/filename file))))
 
-; (connect/defresolver top-blocks [{:editor/keys [contents]}]
-;   {:editor/top-blocks (editor-helpers/top-blocks contents)})
-
-; (connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]
-;                                                   :as inputs}]
-;   {::pco/input [:editor/top-blocks :editor/range]
-;    ::pco/output [{:editor/ns [:text/contents :text/range]}]}
-;
-;   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-;     {:editor/ns {:text/contents (str ns) :text/range range}}))
-
 (connect/defresolver namespace-from-text [{:text/keys [top-blocks range]}]
   {::pco/output [{:text/ns [:text/contents :text/range :text/ns]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
     {:text/ns {:text/contents (str ns) :text/range range}}))
-
-; (connect/defresolver current-top-block [{:editor/keys [top-blocks range]}]
-;   {::pco/output [{:editor/top-block [:text/contents :text/range]}]}
-;   (when-let [[range text] (editor-helpers/top-block-for top-blocks (first range))]
-;     {:editor/top-block {:text/contents text :text/range range}}))
 
 (connect/defresolver contents-top-blocks [{:text/keys [contents]}]
   {:text/top-blocks (editor-helpers/top-blocks contents)})
@@ -56,24 +40,12 @@
     {:text/top-block (cond-> {:text/contents text :text/range range}
                              ns (assoc :text/ns ns))}))
 
-; (connect/defresolver editor-block [{:editor/keys [contents range]}]
-;   {::pco/output [{:editor/block [:text/contents :text/range]}]}
-;   (when-let [[range text] (editor-helpers/block-for contents (first range))]
-;     {:editor/block {:text/contents text :text/range range}}))
-
 (connect/defresolver text-block [{:text/keys [contents range ns]}]
   {::pco/input [:text/contents :text/range (pco/? :text/ns)]
    ::pco/output [{:text/block [:text/contents :text/range :text/ns]}]}
   (when-let [[range text] (editor-helpers/block-for contents (first range))]
     {:text/block (cond-> {:text/contents text :text/range range}
                          ns (assoc :text/ns ns))}))
-
-; (connect/defresolver current-selection [{:editor/keys [contents range]}]
-;   {::pco/input [:editor/contents :editor/range]
-;    ::pco/output [{:editor/selection [:text/contents :text/range]}]}
-;
-;   (when-let [text (editor-helpers/text-in-range contents range)]
-;     {:editor/selection {:text/contents text :text/range range}}))
 
 (connect/defresolver text-selection [{:text/keys [contents range ns]}]
   {::pco/input [:text/contents :text/range (pco/? :text/ns)]
@@ -126,14 +98,6 @@
                                    :cljs)}
         nil))))
 
-; (connect/defresolver var-from-editor
-;   [{:editor/keys [contents range]}]
-;   {::pco/output [{:editor/current-var [:text/contents :text/range]}]}
-;
-;   (when-let [[range curr-var] (editor-helpers/current-var contents (first range))]
-;     {:editor/current-var {:text/contents curr-var
-;                           :text/range range}}))
-
 (connect/defresolver var-from-text [{:text/keys [contents range ns]}]
   {::pco/input [:text/contents :text/range (pco/? :text/ns)]
    ::pco/output [{:text/current-var [:text/contents :text/range :text/ns]}]}
@@ -141,6 +105,17 @@
   (when-let [[range curr-var] (editor-helpers/current-var contents (first range))]
     {:text/current-var (cond-> {:text/contents curr-var :text/range range}
                                ns (assoc :text/ns ns))}))
+
+(pco/defresolver contents-from-filename [env {:file/keys [filename]}]
+  {::pco/input [:file/filename]
+   ::pco/output [{:file/contents [:text/contents :text/range]}]}
+
+  (let [contents #?(:clj (slurp filename)
+                    :cljs (str (readFileSync filename)))
+        range (-> env pco/params (:range [[0 0] [0 0]]))]
+    {:file/contents
+     {:text/range range
+      :text/contents contents}}))
 
 ; (pco/defresolver all-namespaces
 ;   [env {:keys [repl/clj]}]
@@ -261,19 +236,11 @@
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
 
-(def resolvers [seed-data separate-data
-                ;top-blocks
-                ;namespace-from-editor-data
-                resolver-for-ns
-                ; default-namespaces namespace-from-editor
-                ;var-from-editor current-top-block current-selection
-
+(def resolvers [seed-data separate-data resolver-for-ns
                 ; BLOCKS
-                ;editor-block
                 text-block
                 contents-top-blocks contents-top-block
                 var-from-text text-selection namespace-from-text
 
-                ; repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file
-                resolve-repl-kind
-                default-text-elements])
+                resolve-repl-kind default-text-elements
+                contents-from-filename])

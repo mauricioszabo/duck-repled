@@ -9,14 +9,14 @@
 (def ^:private range [:cat [:schema pos] [:schema pos]])
 (def ^:private editor-data [:map
                             [:contents string?]
-                            [:filename {:maybe true} [:maybe string?]]
+                            [:filename {:optional true} [:maybe string?]]
                             [:range range]])
 (def ^:private range-and-content [:cat [:schema range] string?])
 (def ^:private top-blocks [:vector range-and-content])
 (def ^:private contents [:map
                          [:text/contents string?]
-                         [:text/range range]
-                         [:repl/evaluator {:optional true} any?]])
+                         [:text/range range]])
+
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/contents (m/schema string?)
@@ -44,6 +44,7 @@
    :file/path (m/schema [:vector string?])
    :file/filename (m/schema string?)
    :file/exists? (m/schema boolean?)
+   :file/contents (m/schema contents)
 
    :config/repl-kind (m/schema keyword?)
    :config/eval-as (m/schema [:enum :clj :cljs :prefer-clj :prefer-cljs])
