@@ -67,7 +67,7 @@
 (connect/defresolver clojure-filename [{:keys [:repl/evaluator :var/meta
                                                :repl/kind :repl/clj]}]
   {::pco/input [:repl/evaluator :var/meta :repl/kind (pco/? :repl/clj)]
-   ::pco/output [:definition/filename :definition/file-contents
+   ::pco/output [:definition/filename
                  {:definition/contents [:text/contents :text/range]}]}
 
   (when-let [repl (case kind
@@ -86,7 +86,6 @@
         (p/let [{:keys [result]} (read-jar repl filename)
                 pos [(-> meta (:line 1) dec) (-> meta (:column 1) dec)]]
           {:definition/filename filename
-           :definition/file-contents result
            :definition/contents {:text/contents result
                                  :text/range [pos pos]}})
         {:definition/filename filename}))))
