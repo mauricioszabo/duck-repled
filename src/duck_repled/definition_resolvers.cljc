@@ -4,6 +4,7 @@
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
             [duck-repled.template :refer [template]]
+            [duck-repled.editor-helpers :as helpers]
             [promesa.core :as p]
             #?(:cljs ["fs" :refer [existsSync statSync]])
             #?(:cljs ["path" :refer [join]])
@@ -66,7 +67,8 @@
 (connect/defresolver clojure-filename [{:keys [:repl/evaluator :var/meta
                                                :repl/kind :repl/clj]}]
   {::pco/input [:repl/evaluator :var/meta :repl/kind (pco/? :repl/clj)]
-   ::pco/output [:definition/filename :definition/file-contents]}
+   ::pco/output [:definition/filename
+                 {:definition/contents [:text/contents :text/range]}]}
 
   (when-let [repl (case kind
                    :clj evaluator
@@ -81,9 +83,11 @@
             {:keys [result]} (repl/eval repl code)
             filename (norm-result result)]
       (if (re-find #"\.jar!/" filename)
-        (p/let [{:keys [result]} (read-jar repl filename)]
+        (p/let [{:keys [result]} (read-jar repl filename)
+                pos [(-> meta (:line 1) dec) (-> meta (:column 1) dec)]]
           {:definition/filename filename
-           :definition/file-contents result})
+           :definition/contents {:text/contents result
+                                 :text/range [pos pos]}})
         {:definition/filename filename}))))
 
 (connect/defresolver file-from-clr [{:keys [:repl/evaluator :var/meta :repl/kind]}]
@@ -97,10 +101,19 @@
       (when result
         {:definition/filename (norm-result result)}))))
 
-(connect/defresolver resolver-for-ns-only [{:keys [:repl/evaluator :editor/current-var]}]
-  {::pco/output [:var/meta :definition/row :definition/col]}
+(defn- extract-right-var [current-var contents]
+  (let [contents (or (:text/contents current-var) contents)
+        [_ var] (helpers/current-var (str contents) [0 0])]
+    (when (and var (= var contents))
+      contents)))
 
-  (let [fqn (-> current-var :text/contents symbol)]
+(connect/defresolver resolver-for-ns-only
+  [{:keys [repl/evaluator text/contents text/current-var]}]
+
+  {::pco/input [:repl/evaluator (pco/? :text/current-var) (pco/? :text/contents)]
+   ::pco/output [:var/meta :definition/row :definition/col]}
+
+  (when-let [fqn (some-> (extract-right-var current-var contents) symbol)]
     (when (-> fqn namespace nil?)
       (p/let [code (template `(let [ns# (find-ns '::namespace-sym)
                                      first-var# (some-> ns#

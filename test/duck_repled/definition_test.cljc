@@ -1,6 +1,6 @@
 (ns duck-repled.definition-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]
@@ -24,10 +24,9 @@
                   :config/eval-as :prefer-clj}]
 
       (when (#{:sci} helpers/*kind*)
-        (p/do!
-         (check (eql seed [:definition/row]) => {:definition/row 1})
-         (check (eql seed [:definition/filename])
-                => {:definition/filename "test/duck_repled/tests.cljs"}))))))
+        (check (eql seed [:var/meta :definition/filename :definition/row])
+               => {:definition/filename "test/duck_repled/tests.cljs"
+                    :definition/row 1})))))
 
 (deftest ns-definition
   (when (#{:sci} helpers/*kind*)
@@ -52,18 +51,19 @@
                     :editor/data {:contents "(ns foo)\nstr/replace"
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
-        (def seed seed)
         (p/do!
          (testing "finds JAR and unpacks in CLJ and CLJS funcions"
            (check (eql (assoc-in seed [:editor/data :filename] "file.clj")
-                       [:definition/filename :definition/file-contents])
+                       [:definition/filename :definition/contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.clj"
-                      :definition/file-contents string?})
+                      :definition/contents {:text/contents #"clojure.string"
+                                            :text/range [[74 0] [74 0]]}})
 
            (check (eql (assoc-in seed [:editor/data :filename] "file.cljs")
-                       [:definition/filename :definition/file-contents])
+                       [:definition/filename :definition/contents])
                   => {:definition/filename #"clojure.*jar!/clojure/string.cljs"
-                      :definition/file-contents string?}))
+                      :definition/contents {:text/contents #"clojure.string"
+                                            :text/range [[43 0] [43 0]]}}))
 
          (testing "getting path of stacktrace"
            (check (eql (-> seed
@@ -90,7 +90,3 @@
         (check (eql seed [:definition/filename :definition/row])
                => {:definition/filename #"clojure.main.*string.clj"
                    :definition/row number?})))))
-
-#?(:cljs
-   (defn- ^:dev/after-load run []
-     (run-tests)))

@@ -3,7 +3,8 @@
             [duck-repled.schemas :as schemas]
             [duck-repled.connect :as connect]
             [com.wsscode.pathom3.connect.operation :as pco]
-            [duck-repled.editor-helpers :as editor-helpers]))
+            [duck-repled.editor-helpers :as editor-helpers]
+            #?(:cljs ["fs" :refer [readFileSync]])))
 
 (connect/defresolver seed-data [{:keys [seed]} _]
   {::pco/output (->> schemas/registry keys (remove #{:map}) vec)
@@ -11,102 +12,64 @@
   seed)
 
 (connect/defresolver separate-data [{editor-data :editor/data}]
-  {::pco/output [:editor/contents :editor/filename :editor/range]}
+  {::pco/output [:editor/filename {:editor/contents [:text/contents :text/range]}]}
 
   ; (when-let [editor-data (-> env :seed :editor/data)]
   (let [file (:filename editor-data)]
-    (cond-> {:editor/contents (:contents editor-data)
-             :editor/range (:range editor-data)}
+    (cond-> {:editor/contents {:text/contents (:contents editor-data)
+                               :text/range (:range editor-data)}}
             file (assoc :editor/filename file))))
 
-(connect/defresolver top-blocks [{:editor/keys [contents]}]
-  {:editor/top-blocks (editor-helpers/top-blocks contents)})
-
-(connect/defresolver namespace-from-editor-data [{:editor/keys [top-blocks range]
-                                                  :as inputs}]
-  {::pco/input [:editor/top-blocks :editor/range]
-   ::pco/output [{:editor/ns [:text/contents :text/range]}]}
+(connect/defresolver namespace-from-text [{:text/keys [top-blocks range]}]
+  {::pco/output [{:text/ns [:text/contents :text/range :text/ns]}]}
 
   (when-let [[range ns] (editor-helpers/ns-range-for top-blocks (first range))]
-    {:editor/ns {:text/contents (str ns) :text/range range}}))
+    {:text/ns {:text/contents (str ns) :text/range range}}))
 
-(connect/defresolver current-top-block [{:editor/keys [top-blocks range]
-                                         :as inputs}]
-  {::pco/input [:editor/top-blocks :editor/range
-                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
-   ::pco/output [{:editor/top-block [:text/contents :text/range :repl/evaluator]}]}
+(connect/defresolver contents-top-blocks [{:text/keys [contents]}]
+  {:text/top-blocks (editor-helpers/top-blocks contents)})
+
+(connect/defresolver contents-top-block [{:text/keys [top-blocks range ns]}]
+  {::pco/input [:text/top-blocks :text/range (pco/? :text/ns)]
+   ::pco/output [{:text/top-block [:text/contents :text/range :text/ns]}]}
 
   (when-let [[range text] (editor-helpers/top-block-for top-blocks (first range))]
-    {:editor/top-block {:text/contents text :text/range range}}))
+    {:text/top-block (cond-> {:text/contents text :text/range range}
+                             ns (assoc :text/ns ns))}))
 
-(connect/defresolver current-block [{:editor/keys [contents range]
-                                     :as inputs}]
-  {::pco/input [:editor/contents :editor/range
-                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
-   ::pco/output [{:editor/block [:text/contents :text/range :repl/evaluator]}]}
-
+(connect/defresolver text-block [{:text/keys [contents range ns]}]
+  {::pco/input [:text/contents :text/range (pco/? :text/ns)]
+   ::pco/output [{:text/block [:text/contents :text/range :text/ns]}]}
   (when-let [[range text] (editor-helpers/block-for contents (first range))]
-    {:editor/block {:text/contents text :text/range range}}))
+    {:text/block (cond-> {:text/contents text :text/range range}
+                         ns (assoc :text/ns ns))}))
 
-(connect/defresolver current-selection [{:editor/keys [contents range]
-                                         :as inputs}]
-  {::pco/input [:editor/contents :editor/range
-                (pco/? :repl/evaluator) (pco/? {:editor/ns [:text/contents]})]
-   ::pco/output [{:editor/selection [:text/contents :text/range :repl/evaluator]}]}
+(connect/defresolver text-selection [{:text/keys [contents range ns]}]
+  {::pco/input [:text/contents :text/range (pco/? :text/ns)]
+   ::pco/output [{:text/selection [:text/contents :text/range :text/ns]}]}
 
   (when-let [text (editor-helpers/text-in-range contents range)]
-    {:editor/selection {:text/contents text :text/range range}}))
+    {:text/selection (cond-> {:text/contents text :text/range range}
+                             ns (assoc :text/ns ns))}))
 
-; (connect/defresolver default-namespaces [env {:keys [repl/kind]}]
-;   {:repl/namespace (if (= :cljs kind) 'cljs.user 'user)})
-;
-; (connect/defresolver namespace-from-editor [inputs]
-;   {::pco/input [{:editor/ns [:text/contents]}]
-;    ::pco/output [:repl/namespace] ::pco/priority 1}
-;   {:repl/namespace (-> inputs :editor/ns :text/contents symbol)})
+(connect/defresolver default-text-elements [{:keys [editor/contents]}]
+  {::pco/priority -10}
+  {:text/contents (:text/contents contents)
+   :text/range (:text/range contents)})
 
 (connect/defresolver resolver-for-ns [inputs]
-  {::pco/input [(pco/? {:editor/ns [:text/contents]})
+  {::pco/input [(pco/? :text/ns)
                 (pco/? :repl/kind)]
    ::pco/output [:repl/namespace]}
 
-  (let [contents (-> inputs :editor/ns :text/contents)
+  (let [contents (or (-> inputs :text/ns :text/contents)
+                     (-> inputs :editor/contents :text/ns :text/contents))
         kind (:repl/kind inputs)]
     (cond
-      contents {:repl/namespace (-> inputs :editor/ns :text/contents symbol)}
+      contents {:repl/namespace (symbol contents)}
       (nil? kind) nil
       (= :cljs kind) {:repl/namespace 'cljs.user}
       :not-cljs {:repl/namespace 'user})))
-
-; (connect/defresolver not-clj-repl-kind [{:config/keys [repl-kind]}]
-;   {::pco/output [:repl/kind] ::pco/priority 2}
-;
-;   (when (not= :clj repl-kind)
-;     {:repl/kind repl-kind}))
-;
-; (connect/defresolver repl-kind-from-config [{:config/keys [eval-as]}]
-;   {::pco/output [:repl/kind] ::pco/priority 1}
-;
-;   (case eval-as
-;     :clj {:repl/kind :clj}
-;     :cljs {:repl/kind :cljs}
-;     nil))
-;     ; ::pco/unknown-value))
-;
-; (connect/defresolver repl-kind-from-config-and-file
-;   [{:keys [config/eval-as editor/filename]}]
-;   {::pco/output [:repl/kind]}
-;
-;   (prn :CHECKING-PRIORITY-0)
-;   (let [cljs-file? (str/ends-with? filename ".cljs")
-;         cljc-file? (or (str/ends-with? filename ".cljc")
-;                        (str/ends-with? filename ".cljx"))]
-;     (case eval-as
-;       :prefer-clj {:repl/kind (if cljs-file? :cljs :clj)}
-;       :prefer-cljs {:repl/kind (if (and (not cljs-file?) (not cljc-file?))
-;                                  :clj
-;                                  :cljs)}
-;       nil)))
 
 (connect/defresolver resolve-repl-kind
   [{:keys [config/repl-kind config/eval-as editor/filename]}]
@@ -132,13 +95,24 @@
                                    :cljs)}
         nil))))
 
-(connect/defresolver var-from-editor
-  [{:editor/keys [contents range]}]
-  {::pco/output [{:editor/current-var [:text/contents :text/range]}]}
+(connect/defresolver var-from-text [{:text/keys [contents range ns]}]
+  {::pco/input [:text/contents :text/range (pco/? :text/ns)]
+   ::pco/output [{:text/current-var [:text/contents :text/range :text/ns]}]}
 
   (when-let [[range curr-var] (editor-helpers/current-var contents (first range))]
-    {:editor/current-var {:text/contents curr-var
-                          :text/range range}}))
+    {:text/current-var (cond-> {:text/contents curr-var :text/range range}
+                               ns (assoc :text/ns ns))}))
+
+(pco/defresolver contents-from-filename [env {:file/keys [filename]}]
+  {::pco/input [:file/filename]
+   ::pco/output [{:file/contents [:text/contents :text/range]}]}
+
+  (let [contents #?(:clj (slurp filename)
+                    :cljs (str (readFileSync filename)))
+        range (-> env pco/params (:range [[0 0] [0 0]]))]
+    {:file/contents
+     {:text/range range
+      :text/contents contents}}))
 
 ; (pco/defresolver all-namespaces
 ;   [env {:keys [repl/clj]}]
@@ -259,11 +233,11 @@
 ;                    (.-test res) (assoc :test (.-test res)))})))
 ;
 
-(def resolvers [seed-data separate-data top-blocks
-                namespace-from-editor-data
-                resolver-for-ns
-                ; default-namespaces namespace-from-editor
-                var-from-editor current-top-block current-block current-selection
+(def resolvers [seed-data separate-data resolver-for-ns
+                ; BLOCKS
+                text-block
+                contents-top-blocks contents-top-block
+                var-from-text text-selection namespace-from-text
 
-                ; repl-kind-from-config not-clj-repl-kind repl-kind-from-config-and-file
-                resolve-repl-kind])
+                resolve-repl-kind default-text-elements
+                contents-from-filename])

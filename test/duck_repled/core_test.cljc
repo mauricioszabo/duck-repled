@@ -1,6 +1,6 @@
 (ns duck-repled.core-test
   (:require [check.async :refer [check testing async-test]]
-            [clojure.test :refer [deftest run-tests]]
+            [clojure.test :refer [deftest]]
             [duck-repled.core :as core]
             [promesa.core :as p]))
 
@@ -11,7 +11,8 @@
         (let [eql (core/gen-eql
                    (core/add-resolver {:outputs [:editor/file] :inputs [:editor/contents]}
                                       (fn [{:editor/keys [contents]}]
-                                        {:editor/file (str "filename for " contents)})))]
+                                        {:editor/file (str "filename for "
+                                                           (:text/contents contents))})))]
           (check (eql {:editor/data {:contents "lol"
                                      :filename ""
                                      :range [[0 0] [0 0]]}}
@@ -23,13 +24,10 @@
               (core/gen-eql
                (core/compose-resolver {:outputs [:editor/filename] :inputs [:editor/contents]}
                                       (fn [{:editor/keys [filename contents]}]
-                                        {:editor/filename (str contents "-" filename)})))]
+                                        {:editor/filename (str (:text/contents contents)
+                                                               "-" filename)})))]
           (check (eql {:editor/data {:contents "lol"
                                      :filename "old.clj"
                                      :range [[0 0] [0 0]]}}
                       [:editor/filename])
                  => {:editor/filename "lol-old.clj"}))))))
-
-#?(:cljs
-   (defn- ^:dev/after-load run []
-     (run-tests)))

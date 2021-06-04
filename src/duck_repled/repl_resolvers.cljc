@@ -4,6 +4,7 @@
             [com.wsscode.pathom3.connect.operation :as pco]
             [duck-repled.repl-protocol :as repl]
             [duck-repled.template :refer [template]]
+            [duck-repled.editor-helpers :as helpers]
             [clojure.walk :as walk]
             [promesa.core :as p]))
 
@@ -37,14 +38,23 @@
       {:repl/error result}
       {:repl/result result})))
 
-(connect/defresolver fqn-var
-  [{:keys [repl/namespace editor/current-var repl/evaluator]}]
-  {::pco/output [:var/fqn]}
+(defn- extract-right-var [current-var contents]
+  (let [contents (or (:text/contents current-var) contents)
+        [_ var] (helpers/current-var (str contents) [0 0])]
+    (when (and var (= var contents))
+      contents)))
 
-  (p/let [{:keys [result]} (repl/eval evaluator
-                                      (str "`" (:text/contents current-var))
-                                      {:namespace (str namespace)})]
-    {:var/fqn result}))
+(connect/defresolver fqn-var
+  [{:keys [repl/namespace text/current-var text/contents repl/evaluator]}]
+  {::pco/input [:repl/namespace :repl/evaluator
+                (pco/? :text/current-var) (pco/? :text/contents)]
+   ::pco/output [:var/fqn]}
+
+  (when-let [contents (extract-right-var current-var contents)]
+    (p/let [{:keys [result]} (repl/eval evaluator
+                                        (str "`" contents)
+                                        {:namespace (str namespace)})]
+      {:var/fqn result})))
 
 (defn- eval-for-meta [evaluator var-name namespace]
   (p/let [{:keys [result]} (repl/eval evaluator
@@ -56,18 +66,22 @@
     (when result {:var/meta result})))
 
 (connect/defresolver meta-for-var
-  [{:keys [repl/namespace editor/current-var repl/evaluator config/repl-kind]}]
-  {::pco/input [:repl/namespace :editor/current-var :repl/evaluator
+  [{:keys [repl/namespace repl/evaluator config/repl-kind
+           text/current-var text/contents]}]
+  {::pco/input [:repl/namespace :repl/evaluator
+                (pco/? :text/current-var) (pco/? :text/contents)
                 (pco/? :config/repl-kind)]
    ::pco/output [:var/meta]
    ::pco/priority 1}
-  (p/let [meta (eval-for-meta evaluator (:text/contents current-var) namespace)]
-    (if (= :clje repl-kind)
-      (walk/postwalk #(cond-> %
-                              (and (tagged-literal? %) (-> % .-tag (= 'erl)))
-                              .-form)
-                     meta)
-      meta)))
+
+  (when-let [contents (extract-right-var current-var contents)]
+    (p/let [meta (eval-for-meta evaluator contents namespace)]
+      (if (= :clje repl-kind)
+        (walk/postwalk #(cond-> %
+                                (and (tagged-literal? %) (-> % .-tag (= 'erl)))
+                                .-form)
+                       meta)
+        meta))))
 
 (connect/defresolver meta-for-clj-var
   [{:keys [var/fqn repl/clj repl/kind]}]
