@@ -23,8 +23,10 @@
                          (str "Invalid schema on custom resolver outputing " outputs)))))
 
 (defn gen-eql
-  ([] (gen-eql original-resolvers))
-  ([resolvers]
+  ([] (gen-eql {}))
+  ([{:keys [resolvers plugin]
+     :or {resolvers original-resolvers
+          plugin identity}}]
    (fn q
      ([query] (q {} query))
      ([seed query]
@@ -32,6 +34,7 @@
       (-> resolvers
           indexes/register
           (plugin/register (plugins/attribute-errors-plugin))
+          plugin
           (assoc :seed seed)
           (eql/process query))))))
 
