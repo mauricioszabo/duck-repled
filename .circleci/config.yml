@@ -58,7 +58,7 @@ jobs:
       - run: sudo apt install tmux
       - run: tmux new-session -d
       - run: tmux send-keys './bb --socket-repl 4444 ' Enter
-      - run: sleep 20; node lib/main.js --test 4444
+      - run: sleep 20; node lib/main.js --test 4444 bb
 
   # joker:
   #   <<: *defaults

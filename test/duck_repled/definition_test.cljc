@@ -94,7 +94,8 @@
 (deftest source-for-var
   (async-test "read file contents, and get top block of var" {:timeout 10000}
     (when (and (not= :sci helpers/*kind*)
-               (not= :cljs helpers/*kind*))
+               (not= :cljs helpers/*kind*)
+               (not= :bb helpers/*kind*))
       (p/let [clj (helpers/prepare-repl helpers/*global-evaluator*)
               cljs (helpers/prepare-repl helpers/*cljs-evaluator*)
               seed {:repl/evaluators {:clj clj :cljs cljs}
