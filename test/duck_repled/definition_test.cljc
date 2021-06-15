@@ -103,7 +103,6 @@
                                   :range [[1 0] [1 0]]}
                     :config/repl-kind (if cljs :clj helpers/*kind*)
                     :config/eval-as :prefer-clj}]
-        (def seed seed)
         (p/do!
          (testing "will get source inside a CLJ file"
            (check (eql seed [{:text/current-var [:definition/source]}])
