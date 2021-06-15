@@ -12,7 +12,8 @@
             #?(:cljs [rewrite-clj.node.uneval :refer [UnevalNode]])
             #?(:cljs [rewrite-clj.node.reader-macro :refer [ReaderMacroNode DerefNode]])
             #?(:cljs [rewrite-clj.node.fn :refer [FnNode]])
-            #?(:cljs [rewrite-clj.node.quote :refer [QuoteNode]]))
+            #?(:cljs [rewrite-clj.node.quote :refer [QuoteNode]])
+            #?(:cljs ["fs" :refer [readFileSync]]))
   #?(:clj (:import [rewrite_clj.node.uneval UnevalNode]
                    [rewrite_clj.node.reader_macro ReaderMacroNode DerefNode]
                    [rewrite_clj.node.fn FnNode]
@@ -174,3 +175,7 @@ that the cursor is in row and col (0-based)"
                                                        col2))
                                                 %)))
         (->> (str/join "\n")))))
+
+(defn read-file [filename]
+  #?(:clj (slurp filename)
+     :cljs (str (readFileSync filename))))

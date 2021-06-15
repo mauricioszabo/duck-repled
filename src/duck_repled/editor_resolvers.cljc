@@ -3,8 +3,7 @@
             [duck-repled.schemas :as schemas]
             [duck-repled.connect :as connect]
             [com.wsscode.pathom3.connect.operation :as pco]
-            [duck-repled.editor-helpers :as editor-helpers]
-            #?(:cljs ["fs" :refer [readFileSync]])))
+            [duck-repled.editor-helpers :as editor-helpers]))
 
 (connect/defresolver seed-data [{:keys [seed]} _]
   {::pco/output (->> schemas/registry keys (remove #{:map}) vec)
@@ -103,16 +102,15 @@
     {:text/current-var (cond-> {:text/contents curr-var :text/range range}
                                ns (assoc :text/ns ns))}))
 
-(pco/defresolver contents-from-filename [env {:file/keys [filename]}]
+(connect/defresolver contents-from-filename [env {:file/keys [filename]}]
   {::pco/input [:file/filename]
    ::pco/output [{:file/contents [:text/contents :text/range]}]}
 
-  (let [contents #?(:clj (slurp filename)
-                    :cljs (str (readFileSync filename)))
+  (let [contents (editor-helpers/read-file filename)
         range (-> env pco/params (:range [[0 0] [0 0]]))]
-    {:file/contents
-     {:text/range range
-      :text/contents contents}}))
+    (when contents
+      {:file/contents {:text/range range
+                       :text/contents contents}})))
 
 ; (pco/defresolver all-namespaces
 ;   [env {:keys [repl/clj]}]
