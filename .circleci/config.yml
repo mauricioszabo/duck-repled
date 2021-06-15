@@ -79,7 +79,7 @@ jobs:
       - run: sudo npm install -g lumo-cljs --unsafe-perm
       - run: tmux new-session -d
       - run: tmux send-keys 'lumo -n 4444 ' Enter
-      - run: sleep 5; node lib/main.js --test 4444
+      - run: sleep 5; node lib/main.js --test 4444 cljs
 
   clojerl:
     docker:
