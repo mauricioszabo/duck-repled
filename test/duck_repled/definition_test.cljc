@@ -91,9 +91,9 @@
                => {:definition/filename #"clojure.main.*string.clj"
                    :definition/row number?})))))
 
-(when (not= :sci helpers/*kind*)
-  (deftest source-for-var
-    (async-test "read file contents, and get top block of var"
+(deftest source-for-var
+  (async-test "read file contents, and get top block of var" {:timeout 10000}
+    (when (not= :sci helpers/*kind*)
       (p/let [clj (helpers/prepare-repl helpers/*global-evaluator*)
               cljs (helpers/prepare-repl helpers/*cljs-evaluator*)
               seed {:repl/evaluators {:clj clj :cljs cljs}
@@ -101,6 +101,7 @@
                                   :filename "file.clj"
                                   :range [[1 0] [1 0]]}
                     :config/eval-as :prefer-clj}]
+        (def seed seed)
         (p/do!
          (testing "will get source inside a CLJ file"
            (check (eql seed [{:text/current-var [:definition/source]}])
@@ -114,21 +115,20 @@
                          [{:text/current-var [:definition/source]}])
                     => {:text/current-var
                         {:definition/source
-                          {:text/contents #".*defn.*replace"}}}))))))))
+                          {:text/contents #".*defn.*replace"}}}))))))
 
-(when (= :sci helpers/*kind*)
-  (deftest source-for-var
-    (async-test "read file contents, and get top block of var"
-      (p/let [clj (helpers/prepare-repl helpers/*global-evaluator*)
-              seed {:repl/evaluators {:clj clj}
-                    :editor/data {:contents "(ns duck-repled.tests)\nconnect-socket!"
-                                  :filename "file.clj"
-                                  :range [[1 0] [1 0]]}
-                    :config/eval-as :prefer-clj}]
-        (def seed seed)
-        (p/do!
-         (repl/eval clj
-                    "(ns duck-repled.tests)
+    (when (= :sci helpers/*kind*)
+      (deftest source-for-var
+        (async-test "read file contents, and get top block of var"
+          (p/let [clj (helpers/prepare-repl helpers/*global-evaluator*)
+                  seed {:repl/evaluators {:clj clj}
+                        :editor/data {:contents "(ns duck-repled.tests)\nconnect-socket!"
+                                      :filename "file.clj"
+                                      :range [[1 0] [1 0]]}
+                        :config/eval-as :prefer-clj}]
+            (p/do!
+             (repl/eval clj
+                        "(ns duck-repled.tests)
 
 
 
@@ -138,11 +138,11 @@
 
 
 (defn- connect-socket! [[port kind]])"
-                    {:filename "test/duck_repled/tests.cljs"}))
+                        {:filename "test/duck_repled/tests.cljs"}))
 
-        (testing "will get source inside a source file"
-          (check (eql seed [{:text/current-var [:definition/source]}])
-                 => {:text/current-var
-                     {:definition/source
-                       {:text/contents #"defn- connect-socket!"
-                        :text/range [[9 0] [19 40]]}}}))))))
+            (testing "will get source inside a source file"
+              (check (eql seed [{:text/current-var [:definition/source]}])
+                     => {:text/current-var
+                         {:definition/source
+                           {:text/contents #"defn- connect-socket!"
+                            :text/range [[9 0] [19 40]]}}}))))))))
