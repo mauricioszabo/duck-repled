@@ -5,11 +5,7 @@
             [duck-repled.core-test]
             [clojure.test :as test]
             [promesa.core :as p]
-            [duck-repled.repl-helpers :as helpers]
-            [duck-repled.repl-protocol :as repl]))
-
-(defmethod test/report [::test/default :begin-test-var] [m]
-  (println "Testing:" (test/testing-vars-str m)))
+            [duck-repled.repl-helpers :as helpers]))
 
 (defn- connect-socket! [[port kind]]
   (set! helpers/*global-evaluator* #(helpers/connect-socket!
@@ -22,6 +18,9 @@
                                      "localhost"
                                      (js/parseInt port)))
     (set! helpers/*cljs-evaluator* nil)))
+
+(defmethod test/report [::test/default :begin-test-var] [m]
+  (println "Testing:" (test/testing-vars-str m)))
 
 (defn- ^:dev/after-load run-tests []
   (test/run-all-tests #"duck-repled.*-test"))
