@@ -93,13 +93,15 @@
 
 (deftest source-for-var
   (async-test "read file contents, and get top block of var" {:timeout 10000}
-    (when (not= :sci helpers/*kind*)
+    (when (and (not= :sci helpers/*kind*)
+               (not= :cljs helpers/*kind*))
       (p/let [clj (helpers/prepare-repl helpers/*global-evaluator*)
               cljs (helpers/prepare-repl helpers/*cljs-evaluator*)
               seed {:repl/evaluators {:clj clj :cljs cljs}
                     :editor/data {:contents "(ns foo)\nstr/replace"
                                   :filename "file.clj"
                                   :range [[1 0] [1 0]]}
+                    :config/repl-kind (if cljs :clj helpers/*kind*)
                     :config/eval-as :prefer-clj}]
         (def seed seed)
         (p/do!
