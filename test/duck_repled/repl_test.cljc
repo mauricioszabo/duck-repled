@@ -127,7 +127,7 @@
                                     "([])\n"
                                     "  Another doc")}))))))
 
-  (when (#{:clojerl} helpers/*kind*)
+  (when (#{:clje} helpers/*kind*)
     (async-test "will coerce infos from #erl maps" {:timeout 8000}
       (p/let [evaluator (helpers/prepare-repl helpers/*global-evaluator*)
               seed {:repl/evaluators {:clj evaluator}
