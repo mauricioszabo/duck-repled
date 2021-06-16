@@ -155,6 +155,27 @@
     {:var/meta result
      :definition/row row}))
 
+(connect/defresolver source-from-contents [inputs]
+  {::pco/input [{:definition/contents [:text/top-block]}]
+   ::pco/output [:definition/source]
+   ::pco/priority 1}
+
+  (when-let [source (-> inputs :definition/contents :text/top-block)]
+   {:definition/source source}))
+
+;; FIXME: Maybe this will not cache top-blocks from the same filename
+(connect/defresolver source-from-file [{:definition/keys [filename row col]}]
+  {::pco/input [:definition/filename :definition/row (pco/? :definition/col)]
+   ::pco/output [{:definition/source [:text/contents :text/range]}]}
+
+  (p/let [source (helpers/read-file filename)
+          top-blocks (helpers/top-blocks source)]
+    (when-let [[range text] (helpers/top-block-for top-blocks [row (or col 0)])]
+      {:definition/source {:text/contents text
+                           :text/range range}})))
+
+
 (def resolvers [join-paths-resolver file-exists-resolver position-resolver
                 existing-filename clojure-filename file-from-clr
-                resolver-for-ns-only resolver-for-stacktrace])
+                resolver-for-ns-only resolver-for-stacktrace
+                source-from-contents source-from-file])

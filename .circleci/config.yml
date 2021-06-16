@@ -58,7 +58,7 @@ jobs:
       - run: sudo apt install tmux
       - run: tmux new-session -d
       - run: tmux send-keys './bb --socket-repl 4444 ' Enter
-      - run: sleep 20; node lib/main.js --test 4444
+      - run: sleep 20; node lib/main.js --test 4444 bb
 
   # joker:
   #   <<: *defaults
@@ -79,7 +79,7 @@ jobs:
       - run: sudo npm install -g lumo-cljs --unsafe-perm
       - run: tmux new-session -d
       - run: tmux send-keys 'lumo -n 4444 ' Enter
-      - run: sleep 5; node lib/main.js --test 4444
+      - run: sleep 5; node lib/main.js --test 4444 cljs
 
   clojerl:
     docker:
@@ -94,7 +94,7 @@ jobs:
       - run: tmux new-session -d
       - run: tmux send-keys 'rebar3 clojerl repl' Enter
       - run: tmux send-keys "(do (require 'clojure.core.server) (clojure.core.server/start-server {:name \"socket-repl\" :port 4444 :accept 'clojure.main/repl :address \"localhost\"}))" Enter
-      - run: sleep 20; node lib/main.js --test 4444 clojerl
+      - run: sleep 20; node lib/main.js --test 4444 clje
 
   clojureclr:
     docker:

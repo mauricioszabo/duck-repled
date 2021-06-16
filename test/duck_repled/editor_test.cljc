@@ -180,5 +180,5 @@
     (check (eql {:file/filename "test/duck_repled/tests.cljs"}
                 [{'(:file/contents {:range [[10 0] [10 0]]}) [:text/contents :text/top-block]}])
            => {:file/contents {:text/top-block
-                               {:text/contents #"^.defmethod test/report"
-                                :text/range [[10 0] [11 48]]}}})))
+                               {:text/contents #"^.defn- connect-socket!"
+                                :text/range [[9 0] [19 40]]}}})))

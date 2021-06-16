@@ -44,6 +44,7 @@
    :definition/col (m/schema int?)
    :definition/filename (m/schema string?)
    :definition/contents (m/schema contents)
+   :definition/source (m/schema contents)
 
    :ex/function-name (m/schema string?)
    :ex/filename (m/schema string?)

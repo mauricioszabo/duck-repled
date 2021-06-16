@@ -27,16 +27,15 @@
   ([{:keys [resolvers plugin]
      :or {resolvers original-resolvers
           plugin identity}}]
-   (fn q
-     ([query] (q {} query))
-     ([seed query]
-      (schemas/validate! (keys seed) seed)
-      (-> resolvers
-          indexes/register
-          (plugin/register (plugins/attribute-errors-plugin))
-          plugin
-          (assoc :seed seed)
-          (eql/process query))))))
+   (let [env (-> resolvers
+                 indexes/register
+                 (plugin/register (plugins/attribute-errors-plugin))
+                 plugin)]
+     (fn q
+       ([query] (q {} query))
+       ([seed query]
+        (schemas/validate! (keys seed) seed)
+        (eql/process (assoc env :seed seed) query))))))
 
 (defn add-resolver
   ([config fun] (add-resolver original-resolvers config fun))
