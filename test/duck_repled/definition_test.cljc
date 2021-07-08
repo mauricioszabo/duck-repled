@@ -139,6 +139,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 (defn- connect-socket! [[port kind]])"
                         {:filename "test/duck_repled/tests.cljs"}))
 
@@ -147,4 +158,4 @@
                      => {:text/current-var
                          {:definition/source
                            {:text/contents #"defn- connect-socket!"
-                            :text/range [[9 0] [19 40]]}}}))))))))
+                            :text/range [[20 0] [30 40]]}}}))))))))

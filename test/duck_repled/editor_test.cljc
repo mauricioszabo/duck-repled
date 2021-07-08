@@ -178,7 +178,7 @@
            => {:file/contents {:text/ns {:text/contents "duck-repled.tests"}}})
 
     (check (eql {:file/filename "test/duck_repled/tests.cljs"}
-                [{'(:file/contents {:range [[10 0] [10 0]]}) [:text/contents :text/top-block]}])
+                [{'(:file/contents {:range [[20 0] [20 0]]}) [:text/contents :text/top-block]}])
            => {:file/contents {:text/top-block
                                {:text/contents #"^.defn- connect-socket!"
-                                :text/range [[9 0] [19 40]]}}})))
+                                :text/range [[20 0] [30 40]]}}})))

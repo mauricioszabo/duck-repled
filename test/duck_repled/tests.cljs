@@ -2,10 +2,21 @@
   (:require [duck-repled.editor-test]
             [duck-repled.repl-test]
             [duck-repled.definition-test]
+            [duck-repled.autocomplete-test]
             [duck-repled.core-test]
             [clojure.test :as test]
             [promesa.core :as p]
             [duck-repled.repl-helpers :as helpers]))
+
+;;; White spaces to accomodate new tests
+
+
+
+
+
+
+
+
 
 (defn- connect-socket! [[port kind]]
   (set! helpers/*global-evaluator* #(helpers/connect-socket!
