@@ -17,6 +17,16 @@
                          [:text/contents string?]
                          [:text/range range]])
 
+(def ^:private completion [:vector
+                           [:map
+                            [:text/contents string?]
+                            [:completion/type [:enum
+                                               :keyword
+                                               :function
+                                               :macro
+                                               :namespace
+                                               :other]]]])
+
 (def registry
   {:editor/data (m/schema editor-data)
    :editor/filename (m/schema string?)
@@ -63,6 +73,9 @@
    :var/meta (m/schema any?)
    :var/fqn (m/schema qualified-symbol?)
    :var/doc (m/schema string?)
+
+   :completions/var (m/schema completion)
+   :completions/keyword (m/schema completion)
 
    :map (:map (m/base-schemas))})
 

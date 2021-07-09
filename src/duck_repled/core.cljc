@@ -7,13 +7,15 @@
             [duck-repled.editor-resolvers :as editor]
             [duck-repled.repl-resolvers :as repl]
             [duck-repled.definition-resolvers :as def]
+            [duck-repled.autocomplete-resolvers :as auto]
             [promesa.core :as p]
             [com.wsscode.pathom3.connect.operation :as pco]
             [clojure.set :as set]))
 
 (def ^:private original-resolvers (vec (concat editor/resolvers
                                                repl/resolvers
-                                               def/resolvers)))
+                                               def/resolvers
+                                               auto/resolvers)))
 
 (defn- gen-resolver-fun [fun outputs]
   (fn [_ input]
