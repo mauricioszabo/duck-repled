@@ -86,7 +86,7 @@
           repl (->SocketREPL pending conn)]
     (p/do!
      (wait-for-ok conn pending)
-     (.write conn (str "(ns foo (:require [clojure.string :as str]))\n"
+     (.write conn (str "(ns foo (:require [clojure.string :as str][clojure.main :as m]))\n"
                        "(defn my-fun \"My doc\" [] (+ 1 2))\n"
                        "(def some-var 10)\n"))
      (wait-for-ok conn pending)
