@@ -28,8 +28,8 @@
                      refers# (collect# clojure.core/ns-map *ns*)
                      from-ns# (->> (clojure.core/ns-aliases *ns*)
                                    (mapcat (fn [[k# v#]]
-                                             (map #(str k# "" %))
-                                             (collect# ns-publics v#))))]
+                                             (map #(str k# "/" %)
+                                                  (collect# ns-publics v#)))))]
                  (->> refers#
                       (concat from-ns#)
                       (filter #(re-find :prefix-regexp %))))
@@ -41,24 +41,31 @@
                                :completion/type :function})
                             (:result res))}))
 
-(connect/defresolver clojure-keyword [{:keys [text/contents repl/evaluator repl/namespace]}]
+(connect/defresolver clojure-keyword [{:keys [text/contents repl/evaluator]
+                                       ns :repl/namespace}]
   {::pco/output [:completions/keyword]}
   (p/let [prefix (->> contents (re-seq valid-prefix) last last re-escape re-pattern)
           cmd `(let [^java.lang.reflect.Field field# (.getDeclaredField clojure.lang.Keyword "table")]
                  (.setAccessible field# true)
                  (->> (.get field# nil)
                       (map #(.getKey %))))
-          {:keys [result]} (repl/eval evaluator (t/template cmd {}))]
+          {:keys [result]} (repl/eval evaluator (t/template cmd {}))
+          imports (when (str/starts-with? contents "::")
+                    (repl/eval evaluator (t/template `(map #(mapv str %) (clojure.core/ns-aliases *ns*))
+                                                     {})
+                               {:namespace ns}))
+          all-nses (cond-> result
+                           imports (concat
+                                    (for [[alias nss] (:result imports)
+                                          one-ns result
+                                          :when one-ns
+                                          :let [row-ns (namespace one-ns)]
+                                          :when (= row-ns nss)]
+                                      (str ":" alias "/" (name one-ns)))))]
     {:completions/keyword
-     (->> result
+     (->> all-nses
           (map #(str ":" %))
           (filter #(re-find prefix %))
           (mapv (fn [elem] {:text/contents elem :completion/type :keyword})))}))
-
-; (re-find
-;  (->> ":gen" (re-seq valid-prefix) last last re-escape re-pattern)
-;  ":gen-class")
-
-; (repl/eval evaluator (t/template cmd {}))
 
 (def resolvers [clojure-complete clojure-keyword])
